@@ -31,7 +31,7 @@ testGroup
 testGroup msg tests = tests . printMsg msg
 
 passed :: (Int, Int) -> Bool
-passed t = eq 0 (fst t)
+passed t = eq 0 (.0 t)
 
 test = runTests (0,0)
 
