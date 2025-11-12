@@ -68,12 +68,12 @@ testCombinators =
 
 testTuples :: (Int, Int) -> (Int, Int)
 testTuples =
-  ( testEqual "fst and snd" (starling const fst snd (1,2)) 1
-  . testEqual "toFst" (toFst snd (1,2)) (2,(1,2))
-  . testEqual "toSnd" (toSnd fst (1,2)) ((1,2),1)
-  . testEqual "fst3, snd3, thr3" ((\t -> (snd3 t, thr3 t, fst3 t)) (3,1,2)) (1,2,3)
-  . testEqual "curry" ((curry fst) 1 2) 1
-  . testEqual "curry3" ((curry3 fst3) 1 2 3) 1
+  ( testEqual "fst and snd" (starling const .0 .1 (1,2)) 1
+  . testEqual "toFst" (toFst .1 (1,2)) (2,(1,2))
+  . testEqual "toSnd" (toSnd .0 (1,2)) ((1,2),1)
+  . testEqual "fst3, snd3, thr3" ((\t -> (.1 t, .2 t, .0 t)) (3,1,2)) (1,2,3)
+  . testEqual "curry" ((curry .0) 1 2) 1
+  . testEqual "curry3" ((curry3 .0) 1 2 3) 1
   . testEqual "uncurry" ((uncurry const) (1,2)) 1
   )
 

@@ -57,12 +57,6 @@ nand x y = not (and x y)
 -- }}}
 -- {{{ Tuples
 
-fst a b :: (a, b) -> a
-snd a b :: (a, b) -> b
-fst3 a b c :: (a, b, c) -> a
-snd3 a b c :: (a, b, c) -> b
-thr3 a b c :: (a, b, c) -> c
-
 curry a b c :: ((a, b) -> c) -> a -> b -> c
 curry f x y = f (x, y)
 
@@ -70,10 +64,10 @@ curry3 a b c d :: ((a, b, c) -> d) -> a -> b -> c -> d
 curry3 f x y z = f (x, y, z)
 
 uncurry a b c :: (a -> b -> c) -> (a, b) -> c
-uncurry f xy = f (fst xy) (snd xy)
+uncurry f xy = f (.0 xy) (.1 xy)
 
 uncurry3 a b c d :: (a -> b -> c -> d) -> (a, b, c) -> d
-uncurry3 f xyz = f (fst3 xyz) (snd3 xyz) (thr3 xyz)
+uncurry3 f xyz = f (.0 xyz) (.1 xyz) (.2 xyz)
 
 toSnd a b :: (a -> b) -> a -> (a, b)
 toSnd f x = (x, f x)
