@@ -202,9 +202,19 @@ class Sequence f where
     -- slice 3 4 [1,2,3] == []
     slice f a :: Int -> Int -> f a -> f a
 
+reverse a :: [a] -> [a]
+
+ --' Sort using a given less-than comparator
+sortWith a :: (a -> a -> Bool) -> [a] -> [a]
+
+sort a :: [a] -> [a]
+sort = sortWith lt
 
 -- list-specific zip - should generalize, but this is used in tests
 zipWith a b c :: (a -> b -> c) -> [a] -> [b] -> [c]
+
+zip a b :: [a] -> [b] -> [(a, b)]
+zip = zipWith (_,_)
 
 -- warning: unsafe
 -- time: O(1)
