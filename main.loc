@@ -5,21 +5,65 @@ import internal
 -- {{{ Type definitions
 
 -- declaring these types here allow imports of types from roots
+
+--' Unit / Null type with a single value
+--' metavar: UNIT
 type Unit
+
+--' Real with no specified width or precision
+--' metavar: REAL
 type Real
+
+--' Integer number with no specified width
+--' metavar: INT
 type Int
+
+--' String with no specified encoding (usually UTF-8)
+--' metavar: STR
 type Str
+
+--' True or false value
+--' metavar: BOOL
 type Bool
+
+--' A map with keys of type `a` and values of type `b`
+--' metavar: MAP
 type Map a b
+
+--' A homogenous list
+--' metavar: LIST
 type List a
+
+--' A 2 element tuple
+--' metavar: TUPLE2
 type Tuple2 a b
+
+--' A 3 element tuple
+--' metavar: TUPLE3
 type Tuple3 a b c
+
+--' A 4 element tuple
+--' metavar: TUPLE4
 type Tuple4 a b c d
+
+--' A 5 element tuple
+--' metavar: TUPLE5
 type Tuple5 a b c d e
+
+--' A 6 element tuple
+--' metavar: TUPLE6
 type Tuple6 a b c d e f
+
+--' A 7 element tuple
+--' metavar: TUPLE7
 type Tuple7 a b c d e f g
+
+--' An 8 element tuple
+--' metavar: TUPLE8
 type Tuple8 a b c d e f g h
 
+--' A string representing a filename
+--' literal: true
 type Filename = Str
 
 -- }}}
