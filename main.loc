@@ -202,13 +202,14 @@ class Sequence f where
     -- slice 3 4 [1,2,3] == []
     slice f a :: Int -> Int -> f a -> f a
 
-reverse a :: [a] -> [a]
-
- --' Sort using a given less-than comparator
-sortWith a :: (a -> a -> Bool) -> [a] -> [a]
-
+-- This is a special case of sorting that uses the default comparator and
+-- algorithm. A more general function would take a comparator explicitly.
 sort a :: [a] -> [a]
-sort = sortWith lt
+
+-- Both of these functions could be implemented in terms of folds, but most
+-- languages will have MUCH more efficient solutions.
+reverse a :: [a] -> [a]
+filter a :: (a -> Bool) -> [a] -> [a]
 
 -- list-specific zip - should generalize, but this is used in tests
 zipWith a b c :: (a -> b -> c) -> [a] -> [b] -> [c]

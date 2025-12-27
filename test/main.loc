@@ -107,6 +107,9 @@ testLists =
   . testEqual "sort [2]" (sort [2]) [2]
   . testEqual "sort [2,1,3]" (sort [2,1,3]) [1,2,3]
   . testEqual "sort [2,1,2,3]" (sort [2,1,2,3]) [1,2,2,3]
+  . testEqual "filter (gt 3 _) [1,5,2,4,3]" (filter (gt 3 _) [1,5,2,4,3]) [1,2]
+  . testEqual "filter (gt _ 3) [1,5,2,4,3]" (filter (gt _ 3) [1,5,2,4,3]) [5,4]
+  . testEqual "filter (gt _ 9) [1,5,2,4,3]" (filter (gt _ 9) [1,5,2,4,3]) ([] :: [Int])
   )
 
 testComparisons :: (Int, Int) -> (Int, Int)
