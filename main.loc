@@ -172,6 +172,9 @@ length = fold (\b a -> add 1 b) 0
 class Functor f where
   map f a b :: (a -> b) -> f a -> f b
 
+class Show a where
+  show a :: a -> Str
+
 -- class Bifunctor f where
 --   bimap f a a' b b' :: (a -> a') -> (b -> b') -> f a b -> f a' b'
 --   onA f a a' b :: (a -> a') -> f a b -> f a' b

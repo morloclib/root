@@ -55,6 +55,7 @@ runTests =
   . testGroup "Bools" testBools
   . testGroup "Comparisons" testComparisons
   . testGroup "Lists" testLists
+  . testGroup "Strings" testStrings
   )
 
 testCombinators :: (Int, Int) -> (Int, Int)
@@ -110,6 +111,11 @@ testLists =
   . testEqual "filter (gt 3 _) [1,5,2,4,3]" (filter (gt 3 _) [1,5,2,4,3]) [1,2]
   . testEqual "filter (gt _ 3) [1,5,2,4,3]" (filter (gt _ 3) [1,5,2,4,3]) [5,4]
   . testEqual "filter (gt _ 9) [1,5,2,4,3]" (filter (gt _ 9) [1,5,2,4,3]) ([] :: [Int])
+  )
+
+testStrings :: (Int, Int) -> (Int, Int)
+testStrings =
+  ( testEqual "show 42" (show 42) "42"
   )
 
 testComparisons :: (Int, Int) -> (Int, Int)
