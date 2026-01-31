@@ -14,9 +14,49 @@ type Unit
 --' metavar: REAL
 type Real
 
+--' 64-bit float
+--' metavar: F64
+type Float64 = Real
+
+--' 32-bit float
+--' metavar: F32
+type Float32 = Real
+
 --' Integer number with no specified width
 --' metavar: INT
 type Int
+
+--' 64 bit integer
+--' metavar: INT64
+type Int64 = Int
+
+--' 32 bit integer
+--' metavar: INT32
+type Int32 = Int
+
+--' 16 bit integer
+--' metavar: INT16
+type Int16 = Int
+
+--' 8 bit integer
+--' metavar: INT8
+type Int8 = Int
+
+--' 64 bit unsigned integer
+--' metavar: UINT64
+type UInt64 = Int
+
+--' 32 bit unsigned integer
+--' metavar: UINT32
+type UInt32 = Int
+
+--' 16 bit unsigned integer
+--' metavar: UINT16
+type UInt16 = Int
+
+--' 8 bit unsigned integer
+--' metavar: UINT8
+type UInt8 = Int
 
 --' String with no specified encoding (usually UTF-8)
 --' metavar: STR
