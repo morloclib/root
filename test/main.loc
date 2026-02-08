@@ -31,7 +31,7 @@ testGroup
 testGroup msg tests = tests . printMsg msg
 
 passed :: (Int, Int) -> Bool
-passed t = eq 0 (.0 t)
+passed t = 0 == (.0 t)
 
 test = runTests (0,0)
 
@@ -42,14 +42,10 @@ runTests :: (Int, Int) -> Bool
 runTests =
   ( passed
   . printResult
-  . testGroup "testIntegral" testIntegral
-  . testGroup "testNumeric" testNumeric
   . testGroup "testSequenceBased" testSequenceBased
   . testGroup "testSequence" testSequence
-  -- . testGroup "Bifunctor" testBifunctor
   . testGroup "Functor" testFunctor
   . testGroup "Fold" testFold
-  -- -- . testGroup "Maybe" testMaybe
   . testGroup "Combinators" testCombinators
   . testGroup "Tuples" testTuples
   . testGroup "Bools" testBools
@@ -83,12 +79,12 @@ testBools :: (Int, Int) -> (Int, Int)
 testBools =
   ( testEqual "not True" (not True) False
   . testEqual "not False" (not False) True
-  . testEqual "and True True" (and True True) True
-  . testEqual "and True False" (and True  False) False
-  . testEqual "or True  True"  (or True  True)  True
-  . testEqual "or True  False" (or True  False) True
-  . testEqual "or False True"  (or False True)  True
-  . testEqual "or False False" (or False False) False
+  . testEqual "and True True" (True && True) True
+  . testEqual "and True False" (True && False) False
+  . testEqual "or True  True"  (True || True)  True
+  . testEqual "or True  False" (True || False) True
+  . testEqual "or False True"  (False || True)  True
+  . testEqual "or False False" (False || False) False
   . testEqual "xor True  True"  (xor True  True)  False
   . testEqual "xor True  False" (xor True  False) True
   . testEqual "xor False True"  (xor False True)  True
@@ -108,9 +104,9 @@ testLists =
   . testEqual "sort [2]" (sort [2]) [2]
   . testEqual "sort [2,1,3]" (sort [2,1,3]) [1,2,3]
   . testEqual "sort [2,1,2,3]" (sort [2,1,2,3]) [1,2,2,3]
-  . testEqual "filter (gt 3 _) [1,5,2,4,3]" (filter (gt 3 _) [1,5,2,4,3]) [1,2]
-  . testEqual "filter (gt _ 3) [1,5,2,4,3]" (filter (gt _ 3) [1,5,2,4,3]) [5,4]
-  . testEqual "filter (gt _ 9) [1,5,2,4,3]" (filter (gt _ 9) [1,5,2,4,3]) ([] :: [Int])
+  . testEqual "filter (3 > _) [1,5,2,4,3]" (filter (3 > _) [1,5,2,4,3]) [1,2]
+  . testEqual "filter (_ > 3) [1,5,2,4,3]" (filter (_ > 3) [1,5,2,4,3]) [5,4]
+  . testEqual "filter (_ > 9) [1,5,2,4,3]" (filter (_ > 9) [1,5,2,4,3]) ([] :: [Int])
   )
 
 testStrings :: (Int, Int) -> (Int, Int)
@@ -120,56 +116,28 @@ testStrings =
 
 testComparisons :: (Int, Int) -> (Int, Int)
 testComparisons =
-  ( testEqual "le 1 2" (le 1 2) True
-  . testEqual "le 1 1" (le 1 1) True
-  . testEqual "le 2 1" (le 2 1) False
-  . testEqual "lt 1 2" (lt 1 2) True
-  . testEqual "lt 1 1" (lt 1 1) False
-  . testEqual "lt 2 1" (lt 2 1) False
-  . testEqual "ge 1 2" (ge 1 2) False
-  . testEqual "ge 1 1" (ge 1 1) True
-  . testEqual "ge 2 1" (ge 2 1) True
-  . testEqual "gt 1 2" (gt 1 2) False
-  . testEqual "gt 1 1" (gt 1 1) False
-  . testEqual "gt 2 1" (gt 2 1) True
-  . testEqual "ne 1 2" (ne 1 2) True
-  . testEqual "ne 1 1" (ne 1 1) False
-  . testEqual "ne 2 1" (ne 2 1) True
+  ( testEqual "le 1 2" (1 <= 2) True
+  . testEqual "le 1 1" (1 <= 1) True
+  . testEqual "le 2 1" (2 <= 1) False
+  . testEqual "lt 1 2" (1 < 2) True
+  . testEqual "lt 1 1" (1 < 1) False
+  . testEqual "lt 2 1" (2 < 1) False
+  . testEqual "ge 1 2" (1 >= 2) False
+  . testEqual "ge 1 1" (1 >= 1) True
+  . testEqual "ge 2 1" (2 >= 1) True
+  . testEqual "gt 1 2" (1 > 2) False
+  . testEqual "gt 1 1" (1 > 1) False
+  . testEqual "gt 2 1" (2 > 1) True
+  . testEqual "ne 1 2" (1 != 2) True
+  . testEqual "ne 1 1" (1 != 1) False
+  . testEqual "ne 2 1" (2 != 1) True
   . testEqual "lesser 1 2" (lesser 1 2) 1
   . testEqual "greater 1 2" (greater 1 2) 2
   )
 
--- testMaybe :: (Int, Int) -> (Int, Int)
--- testMaybe =
---   ( testEqual "maybeToList and just" (maybeToList (just 1)) [1]
---   . testEqual "maybeToList 1" (maybeToList (just 1)) [1]
---   -- . testEqual "listToMaybe" (listToMaybe [1,2]) (just 1)
---   . testEqual "just and fromJust" (fromJust (just 1)) 1
---   . testEqual "catMaybes" (catMaybes [just 1, just 2, nothing]) [1,2]
---   )
---
--- catMaybes a :: [Maybe a] -> [a]
--- catMaybes = map fromOptional . filter isJust
---
--- mapMaybes a :: (a -> Maybe b) -> [a] -> [b]
--- mapMaybes f = filter isJust . map f
---
--- isJust a :: Maybe a -> Bool
--- isJust x = not (isNothing x)
---
--- fromMaybe a :: a -> Maybe a -> a
--- fromMaybe b x = ifelse (isNothing x) b (fromJust x)
---
--- maybe a b :: b -> (a -> b) -> Maybe a -> b
--- maybe b f x = ifelse (isNothing x) b (f (fromJust x))
---
--- fromMaybe a :: a -> Maybe a -> a
--- fromMaybe default x = ifelse (isNothing x) default x
-
-
 testFold :: (Int, Int) -> (Int, Int)
 testFold =
-  ( testEqual "length" (fold (\b a -> add 1 b) 0 [1,2,3]) 3
+  ( testEqual "length" (fold (\b a -> 1 + b) 0 [1,2,3]) 3
   . testEqual "length" (length [1,2,3]) 3
   )
 
@@ -209,54 +177,9 @@ testSequenceBased =
   . testEqual "drop 2 [1,2,3]" (drop 2 [1,2,3]) [3]
   . testEqual "drop 3 [1,2,3]" (drop 3 [1,2,3]) ([] :: [Int])
   . testEqual "drop 4 [1,2,3]" (drop 4 [1,2,3]) ([] :: [Int])
-  -- . testEqual "flatten [[1],[3,4]]" (flatten [[1],[3,4]]) [1,3,4]
   )
 
 testFunctor :: (Int, Int) -> (Int, Int)
 testFunctor =
-  ( testEqual "map" (map (add 1) [1,2,3]) [2,3,4]
+  ( testEqual "map" (map ((+) 1) [1,2,3]) [2,3,4]
   )
-
--- testBifunctor :: (Int, Int) -> (Int, Int)
--- testBifunctor =
---   ( testEqual "bimap tuple" (bimap (add 1) (add 2) (1,2)) (2,4)
---   . testEqual "bimap onA" (onA (add 10) (1,2)) (11,2)
---   . testEqual "bimap onB" (onB (add 10) (1,2)) (1,12)
---   )
-
-testIntegral :: (Int, Int) -> (Int, Int)
-testIntegral =
-  ( testEqual "add" (add 1 2) 3
-  . testEqual "sub" (sub 2 1) 1
-  )
-
-testNumeric :: (Int, Int) -> (Int, Int)
-testNumeric =
-  ( testEqual "mul" (mul 3.0 2.0) 6.0
-  . testEqual "div" (div 6.0 2.0) 3.0
-  )
-
--- instance Packable [a] (Maybe a) where
---     pack x = ifelse (isNothing x) [] [x]
---     unpack xs = ifelse (eq (length xs) 0) [] (head xs)
---
--- nothing a :: Maybe a
--- isNothing a :: Maybe a -> Bool
---
--- catMaybes a :: [Maybe a] -> [a]
--- catMaybes = map fromOptional . filter isJust
---
--- mapMaybes a :: (a -> Maybe b) -> [a] -> [b]
--- mapMaybes f = filter isJust . map f
---
--- isJust a :: Maybe a -> Bool
--- isJust x = not (isNothing x)
---
--- fromMaybe a :: a -> Maybe a -> a
--- fromMaybe b x = ifelse (isNothing x) b (fromJust x)
---
--- maybe a b :: b -> (a -> b) -> Maybe a -> b
--- maybe b f x = ifelse (isNothing x) b (f (fromJust x))
---
--- fromMaybe a :: a -> Maybe a -> a
--- fromMaybe default x = ifelse (isNothing x) default x

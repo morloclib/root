@@ -2,6 +2,21 @@ module root (*)
 
 import internal
 
+infixr 2 ||
+infixr 3 &&
+infixr 5 (<>)
+infixl 5 (<=)
+infixl 5 (<)
+infixl 5 (>)
+infixl 5 (>=)
+infixl 5 (==)
+infixl 5 (!=)
+infixl 6 (+)
+infixl 6 (-)
+infixl 7 (*)
+infixl 7 (/)
+infixr 8 (**)
+
 -- {{{ Type definitions
 
 -- declaring these types here allow imports of types from roots
@@ -106,7 +121,6 @@ type Tuple8 a b c d e f g h
 --' literal: true
 type Filename = Str
 
--- }}}
 -- {{{ Combinators
 
 id a :: a -> a
@@ -128,15 +142,17 @@ starling bcd ab ac a = bcd (ab a) (ac a)
 -- }}}
 -- {{{ Boolean
 
-and :: Bool -> Bool -> Bool
-or :: Bool -> Bool -> Bool
 not :: Bool -> Bool
 
+(&&) :: Bool -> Bool -> Bool
+
+(||) :: Bool -> Bool -> Bool
+
 xor :: Bool -> Bool -> Bool
-xor x y = and (nand x y) (nand (not x) (not y))
+xor x y = (nand x y) && (nand (not x) (not y))
 
 nand :: Bool -> Bool -> Bool
-nand x y = not (and x y)
+nand x y = not (x && y)
 
 -- }}}
 -- {{{ Tuples
@@ -162,44 +178,49 @@ toFst f x = (f x, x)
 -- }}}
 -- {{{ Typeclasses
 
+class Ord a where
+  (<=) a :: a -> a -> Bool
+
+(<) a :: a -> a -> Bool
+(<) x y = x <= y && not (y <= x)
+
+(>) a :: a -> a -> Bool
+(>) x y = y <= x && not (x <= y)
+
+(>=) a :: a -> a -> Bool
+(>=) x y = y <= x
+
+(!=) a :: a -> a -> Bool
+(!=) x y = not (x == y)
+
+lesser a :: a -> a -> a
+lesser x y = ifelse (x < y) x y
+
+greater a :: a -> a -> a
+greater x y = ifelse (x < y) y x
+
 class Eq a where
-  eq a :: a -> a -> Bool
+  (==) a :: a -> a -> Bool
 
 ifelse a :: Bool -> a -> a -> a 
 branch a b :: (a -> Bool) -> (a -> b) -> (a -> b) -> a -> b
 
-class Ord a where
-  le a :: a -> a -> Bool
-
-lt x y = and (le x y) (not (le y x))
-ge x y = le y x
-gt x y = and (le y x) (not (le x y))
-
-lesser a :: a -> a -> a
-lesser x y = ifelse (lt x y) x y
-
-greater a :: a -> a -> a
-greater x y = ifelse (lt x y) y x
-
-ne a :: a -> a -> Bool
-ne x y = not (eq x y)
-
 class Monoid a where
   mempty a :: a
-  mappend a :: a -> a -> a
+  (<>) a :: a -> a -> a
 
 class Integral a where
   zero a :: a
   neg a :: a -> a
-  add a :: a -> a -> a
-  sub a :: a -> a -> a
-  mul a :: a -> a -> a 
+  (+) a :: a -> a -> a
+  (-) a :: a -> a -> a
+  (*) a :: a -> a -> a
 
 class Numeric a where
   one a :: a
   inv a :: a -> a
-  div a :: a -> a -> a 
-  exp a :: a -> a -> a
+  (/) a :: a -> a -> a
+  (**) a :: a -> a -> a
   log a :: a -> a -> a
 
 class Foldable f where
@@ -207,23 +228,13 @@ class Foldable f where
 
 -- O(n), you should probably provide a constant-time implementation for each type
 length f a :: f a -> Int
-length = fold (\b a -> add 1 b) 0
+length = fold (\b a -> 1 + b) 0
 
 class Functor f where
   map f a b :: (a -> b) -> f a -> f b
 
 class Show a where
   show a :: a -> Str
-
--- class Bifunctor f where
---   bimap f a a' b b' :: (a -> a') -> (b -> b') -> f a b -> f a' b'
---   onA f a a' b :: (a -> a') -> f a b -> f a' b
---   onB f a b b' :: (b -> b') -> f a b -> f a b'
---
--- instance Bifunctor Tuple2 where
---   bimap f g x = (f (fst x), g (snd x))
---   onA f x = (f (fst x), snd x)
---   onB g x = (fst x, g (snd x))
 
 -- all sequences are Addable, Foldable, Filterable and Functors
 -- they additionally have a defined order and are isomorphic to lists
@@ -267,10 +278,10 @@ head xs = at 0 xs
 
 -- time: O(n)
 init f a :: f a -> f a
-init xs = slice 0 (sub (length xs) 1) xs
+init xs = slice 0 (length xs - 1) xs
 
 last f a :: f a -> a -- [1,2,3] => 3
-last xs = at (sub (length xs) 1) xs
+last xs = at (length xs - 1) xs
 
 tail f a :: f a -> f a -- [1,2,3] => [2,3]
 tail xs = slice 1 (length xs) xs
