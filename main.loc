@@ -212,9 +212,12 @@ class Monoid a where
 class Integral a where
   zero a :: a
   neg a :: a -> a
+  abs a :: a -> a
   (+) a :: a -> a -> a
   (-) a :: a -> a -> a
   (*) a :: a -> a -> a
+  (//) a :: a -> a -> a
+  (%) a :: a -> a -> a
 
 class Numeric a where
   one a :: a
