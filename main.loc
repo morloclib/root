@@ -2,22 +2,6 @@ module root (*)
 
 import internal
 
-infixr 2 ||
-infixr 3 &&
-infixr 5 (<>)
-infixl 5 (<=)
-infixl 5 (<)
-infixl 5 (>)
-infixl 5 (>=)
-infixl 5 (==)
-infixl 5 (!=)
-infixl 6 (+)
-infixl 6 (-)
-infixl 7 (*)
-infixl 7 (/)
-infixr 8 (**)
-
--- {{{ Type definitions
 
 -- declaring these types here allow imports of types from roots
 
@@ -121,62 +105,26 @@ type Tuple8 a b c d e f g h
 --' literal: true
 type Filename = Str
 
--- {{{ Combinators
 
-id a :: a -> a
-id x = x
 
-seq a b :: a -> b -> b
-seq x y = y
+infixr 2 ||
+infixr 3 &&
+infixr 5 (<>)
+infixl 5 (<=)
+infixl 5 (<)
+infixl 5 (>)
+infixl 5 (>=)
+infixl 5 (==)
+infixl 5 (!=)
+infixl 6 (+)
+infixl 6 (-)
+infixl 7 (*)
+infixl 7 (/)
+infixl 7 (//)
+infixl 7 (%)
+infixr 8 (**)
 
-const a b :: a -> b -> a
-const x y = x
 
-flip a b c :: (a -> b -> c) -> b -> a -> c
-flip f x y = f y x
-
--- From the "To Mock a Mockingbird" aviary
-starling a b c d :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
-starling bcd ab ac a = bcd (ab a) (ac a)
-
--- }}}
--- {{{ Boolean
-
-not :: Bool -> Bool
-
-(&&) :: Bool -> Bool -> Bool
-
-(||) :: Bool -> Bool -> Bool
-
-xor :: Bool -> Bool -> Bool
-xor x y = (nand x y) && (nand (not x) (not y))
-
-nand :: Bool -> Bool -> Bool
-nand x y = not (x && y)
-
--- }}}
--- {{{ Tuples
-
-curry a b c :: ((a, b) -> c) -> a -> b -> c
-curry f x y = f (x, y)
-
-curry3 a b c d :: ((a, b, c) -> d) -> a -> b -> c -> d
-curry3 f x y z = f (x, y, z)
-
-uncurry a b c :: (a -> b -> c) -> (a, b) -> c
-uncurry f xy = f (.0 xy) (.1 xy)
-
-uncurry3 a b c d :: (a -> b -> c -> d) -> (a, b, c) -> d
-uncurry3 f xyz = f (.0 xyz) (.1 xyz) (.2 xyz)
-
-toSnd a b :: (a -> b) -> a -> (a, b)
-toSnd f x = (x, f x)
-
-toFst a b :: (a -> b) -> a -> (b, a)
-toFst f x = (f x, x)
-
--- }}}
--- {{{ Typeclasses
 
 class Ord a where
   (<=) a :: a -> a -> Bool
@@ -190,20 +138,11 @@ class Ord a where
 (>=) a :: a -> a -> Bool
 (>=) x y = y <= x
 
-min a :: a -> a -> a
-min x y = ifelse (x < y) x y
-
-max a :: a -> a -> a
-max x y = ifelse (x < y) y x
-
 class Eq a where
   (==) a :: a -> a -> Bool
 
 (!=) a :: a -> a -> Bool
 (!=) x y = not (x == y)
-
-ifelse a :: Bool -> a -> a -> a 
-branch a b :: (a -> Bool) -> (a -> b) -> (a -> b) -> a -> b
 
 class Monoid a where
   mempty a :: a
@@ -220,18 +159,13 @@ class Integral a where
   (%) a :: a -> a -> a
 
 class Numeric a where
-  one a :: a
   inv a :: a -> a
   (/) a :: a -> a -> a
   (**) a :: a -> a -> a
-  log a :: a -> a -> a
+  ln a :: a -> a
 
 class Foldable f where
   fold f a b :: (b -> a -> b) -> b -> f a -> b
-
--- O(n), you should probably provide a constant-time implementation for each type
-length f a :: f a -> Int
-length = fold (\b a -> 1 + b) 0
 
 class Functor f where
   map f a b :: (a -> b) -> f a -> f b
@@ -259,9 +193,94 @@ class Sequence f where
     -- slice 3 4 [1,2,3] == []
     slice f a :: Int -> Int -> f a -> f a
 
+
+-- Combinators
+--------------
+
+id a :: a -> a
+id x = x
+
+seq a b :: a -> b -> b
+seq x y = y
+
+const a b :: a -> b -> a
+const x y = x
+
+flip a b c :: (a -> b -> c) -> b -> a -> c
+flip f x y = f y x
+
+-- From the "To Mock a Mockingbird" aviary
+starling a b c d :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+starling bcd ab ac a = bcd (ab a) (ac a)
+
+on a b c :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+on f g x y = f (g x) (g y)
+
+-- Logicals
+--------------
+
+not :: Bool -> Bool
+
+(&&) :: Bool -> Bool -> Bool
+
+(||) :: Bool -> Bool -> Bool
+
+xor :: Bool -> Bool -> Bool
+xor x y = (nand x y) && (nand (not x) (not y))
+
+nand :: Bool -> Bool -> Bool
+nand x y = not (x && y)
+
+-- Tuples
+--------------
+
+curry a b c :: ((a, b) -> c) -> a -> b -> c
+curry f x y = f (x, y)
+
+curry3 a b c d :: ((a, b, c) -> d) -> a -> b -> c -> d
+curry3 f x y z = f (x, y, z)
+
+uncurry a b c :: (a -> b -> c) -> (a, b) -> c
+uncurry f xy = f (.0 xy) (.1 xy)
+
+uncurry3 a b c d :: (a -> b -> c -> d) -> (a, b, c) -> d
+uncurry3 f xyz = f (.0 xyz) (.1 xyz) (.2 xyz)
+
+toSnd a b :: (a -> b) -> a -> (a, b)
+toSnd f x = (x, f x)
+
+toFst a b :: (a -> b) -> a -> (b, a)
+toFst f x = (f x, x)
+
+-- Ord
+--------------
+
+min a :: a -> a -> a
+min x y = ifelse (x < y) x y
+
+max a :: a -> a -> a
+max x y = ifelse (x < y) y x
+
+-- Control
+--------------
+
+ifelse a :: Bool -> a -> a -> a 
+branch a b :: (a -> Bool) -> (a -> b) -> (a -> b) -> a -> b
+
+-- Sequential
+--------------
+
+-- O(n), you should probably provide a constant-time implementation for each type
+length f a :: f a -> Int
+length = fold (\b a -> 1 + b) 0
+
+isEmpty f a :: f a -> Bool
+isEmpty xs = length xs == 0
+
 -- This is a special case of sorting that uses the default comparator and
 -- algorithm. A more general function would take a comparator explicitly.
 sort a :: [a] -> [a]
+sortBy a :: (a -> a -> Bool) -> [a] -> [a]
 
 -- Both of these functions could be implemented in terms of folds, but most
 -- languages will have MUCH more efficient solutions.
@@ -295,4 +314,57 @@ take i xs = slice 0 i xs
 drop f a :: Int -> f a -> f a
 drop i xs = slice i (length xs) xs
 
--- }}}
+any a :: (a -> Bool) -> [a] -> Bool
+any f = fold (\b a -> b || f a) False
+
+all a :: (a -> Bool) -> [a] -> Bool
+all f = fold (\b a -> b && f a) True
+
+elem a :: a -> [a] -> Bool
+elem x = any ((==) x)
+
+sum a :: [a] -> a
+sum = fold (+) zero
+
+product a :: [a] -> a
+product xs = fold (*) (head xs) (tail xs)
+
+maximum a :: [a] -> a
+maximum xs = fold max (head xs) (tail xs)
+
+minimum a :: [a] -> a
+minimum xs = fold min (head xs) (tail xs)
+
+concat a :: [[a]] -> [a]
+concat = fold (<>) []
+
+concatMap a b :: (a -> [b]) -> [a] -> [b]
+concatMap f xs = concat (map f xs)
+
+unzip a b :: [(a, b)] -> ([a], [b])
+
+replicate a :: Int -> a -> [a]
+takeWhile a :: (a -> Bool) -> [a] -> [a]
+dropWhile a :: (a -> Bool) -> [a] -> [a]
+partition a :: (a -> Bool) -> [a] -> ([a], [a])
+scanl a b :: (b -> a -> b) -> b -> [a] -> [b]
+
+enumerate a :: [a] -> [(Int, a)]
+intersperse a :: a -> [a] -> [a]
+
+intercalate a :: [a] -> [[a]] -> [a]
+intercalate sep xss = concat (intersperse sep xss)
+
+-- Map functions
+-----------------
+
+keys a b :: Map a b -> [a]
+values a b :: Map a b -> [b]
+lookup a b :: a -> Map a b -> b
+insert a b :: a -> b -> Map a b -> Map a b
+delete a b :: a -> Map a b -> Map a b
+fromList a b :: [(a, b)] -> Map a b
+toList a b :: Map a b -> [(a, b)]
+mapValues a b c :: (b -> c) -> Map a b -> Map a c
+mapKeys a b c :: (a -> c) -> Map a b -> Map c b
+filterMap a b :: (a -> b -> Bool) -> Map a b -> Map a b
