@@ -179,11 +179,11 @@ class Show a where
 class Sequence f where
     empty f a :: f a
 
-    -- at -1 [1,2,3] == FUCK!!!
+    -- at -1 [1,2,3] == Null
     -- at 0  [1,2,3] == 1
     -- at 2  [1,2,3] == 3
-    -- at 4  [1,2,3] == FUCK!!!
-    at f a :: Int -> f a -> a
+    -- at 4  [1,2,3] == Null
+    at f a :: Int -> f a -> ?a
 
     -- slice 0 0 [1,2,3] == []
     -- slice 0 1 [1,2,3] == [1]
@@ -295,14 +295,14 @@ zip = zipWith (_,_)
 
 -- warning: unsafe
 -- time: O(1)
-head f a :: f a -> a -- [1,2,3] => 1
+head f a :: f a -> ?a -- [1,2,3] => 1
 head xs = at 0 xs
 
 -- time: O(n)
 init f a :: f a -> f a
 init xs = slice 0 (length xs - 1) xs
 
-last f a :: f a -> a -- [1,2,3] => 3
+last f a :: f a -> ?a -- [1,2,3] => 3
 last xs = at (length xs - 1) xs
 
 tail f a :: f a -> f a -- [1,2,3] => [2,3]
@@ -355,12 +355,17 @@ intersperse a :: a -> [a] -> [a]
 intercalate a :: [a] -> [[a]] -> [a]
 intercalate sep xss = concat (intersperse sep xss)
 
+
+-- Optional handling
+fromNull a :: a -> ?a -> a
+
+
 -- Map functions
 -----------------
 
 keys a b :: Map a b -> [a]
 values a b :: Map a b -> [b]
-lookup a b :: a -> Map a b -> b
+lookup a b :: a -> Map a b -> ?b
 insert a b :: a -> b -> Map a b -> Map a b
 delete a b :: a -> Map a b -> Map a b
 fromList a b :: [(a, b)] -> Map a b
