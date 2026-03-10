@@ -146,10 +146,12 @@ class Integral a where
   (//) a :: a -> a -> a
   (%) a :: a -> a -> a
 
+  -- This is defined for integers ONLY when the power is positive
+  (**) a :: a -> a -> a
+
 class Integral a => Numeric a where
   inv a :: a -> a
   (/) a :: a -> a -> a
-  (**) a :: a -> a -> a
   ln a :: a -> a
 
 class Foldable f where
