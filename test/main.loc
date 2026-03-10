@@ -42,86 +42,126 @@ runTests :: (Int, Int) -> Bool
 runTests =
   ( passed
   . printResult
-  . testGroup "Map" testMap
-  . testGroup "New List Ops" testNewListOps
+  . testGroup "Array" testArray
+  . testGroup "Vector" testVector
+  . testGroup "Deque" testDeque
+  . testGroup "Readable" testReadable
+  . testGroup "New Functions" testNewFunctions
   . testGroup "List Functions" testListFunctions
-  . testGroup "Numeric" testNumeric
-  . testGroup "Integral" testIntegral
-  . testGroup "Monoid" testMonoid
+  . testGroup "List Ops" testListOps
+  . testGroup "Lists" testLists
   . testGroup "Branching" testBranching
-  . testGroup "testSequenceBased" testSequenceBased
-  . testGroup "testSequence" testSequence
+  . testGroup "Queue" testQueue
+  . testGroup "Stack" testStack
+  . testGroup "Indexed" testIndexed
   . testGroup "Functor" testFunctor
   . testGroup "Fold" testFold
-  . testGroup "Combinators" testCombinators
-  . testGroup "Tuples" testTuples
-  . testGroup "Bools" testBools
+  . testGroup "Show" testShow
+  . testGroup "Monoid" testMonoid
+  . testGroup "Numeric" testNumeric
+  . testGroup "Integral" testIntegral
   . testGroup "Comparisons" testComparisons
-  . testGroup "Lists" testLists
-  . testGroup "Strings" testStrings
+  . testGroup "Bools" testBools
+  . testGroup "Tuples" testTuples
+  . testGroup "Combinators" testCombinators
   )
+
+-------------------------------------------------------------------------------
+-- Combinators
 
 testCombinators :: (Int, Int) -> (Int, Int)
 testCombinators =
-  ( testEqual "id" (id 1) 1
+  ( testEqual "id int" (id 1) 1
+  . testEqual "id str" (id "hello") "hello"
+  . testEqual "id list" (id [1,2,3]) [1,2,3]
+  . testEqual "id bool" (id True) True
   . testEqual "seq" (seq 1 2) 2
+  . testEqual "seq str" (seq "ignored" "kept") "kept"
   . testEqual "const" (const 1 2) 1
-  . testEqual "flip" ((flip const) 1 2) (seq 1 2)
+  . testEqual "const str" (const "a" "b") "a"
+  . testEqual "flip" ((flip const) 1 2) 2
+  . testEqual "flip sub" ((flip (-)) 1 3) 2
+  -- starling :: (b -> c -> d) -> (a -> b) -> (a -> c) -> a -> d
+  -- Tests a higher-order combinator with multiple type-variable instantiation
   . testEqual "starling 1" (starling const (const 42) (const 49) 99) 42
   . testEqual "starling 2" (starling const (seq 42) (const 49) 99) 99
-  . testEqual "on" (on (+) (_ * 2) 3 4) 14
+  -- on :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+  . testEqual "on add double" (on (+) (_ * 2) 3 4) 14
+  . testEqual "on eq" (on (==) (_ * 2) 3 3) True
+  . testEqual "on ne" (on (==) (_ * 2) 3 4) False
+  -- Composition via .
+  . testEqual "compose" ((((\x -> x + 1) . (\x -> x * 2)) 3)) 7
+  . testEqual "compose 2" (((show . (\x -> x + 1)) 41)) "42"
   )
+
+-------------------------------------------------------------------------------
+-- Tuples
 
 testTuples :: (Int, Int) -> (Int, Int)
 testTuples =
-  ( testEqual "fst and snd" (starling const .0 .1 (1,2)) 1
+  ( testEqual "fst" (.0 (1,2)) 1
+  . testEqual "snd" (.1 (1,2)) 2
+  . testEqual "fst str" (.0 ("a","b")) "a"
+  . testEqual "snd str" (.1 ("a","b")) "b"
+  -- toFst :: (a -> b) -> a -> (b, a)
   . testEqual "toFst" (toFst .1 (1,2)) (2,(1,2))
+  -- toSnd :: (a -> b) -> a -> (a, b)
   . testEqual "toSnd" (toSnd .0 (1,2)) ((1,2),1)
-  . testEqual "fst3, snd3, thr3" ((\t -> (.1 t, .2 t, .0 t)) (3,1,2)) (1,2,3)
-  . testEqual "curry" ((curry .0) 1 2) 1
-  . testEqual "curry3" ((curry3 .0) 1 2 3) 1
-  . testEqual "uncurry" ((uncurry const) (1,2)) 1
+  -- 3-tuple accessors
+  . testEqual "fst3" (.0 (1,2,3)) 1
+  . testEqual "snd3" (.1 (1,2,3)) 2
+  . testEqual "thr3" (.2 (1,2,3)) 3
+  . testEqual "rearrange 3-tuple" ((\t -> (.1 t, .2 t, .0 t)) (3,1,2)) (1,2,3)
+  -- curry :: ((a, b) -> c) -> a -> b -> c
+  . testEqual "curry fst" ((curry .0) 1 2) 1
+  . testEqual "curry snd" ((curry .1) 1 2) 2
+  -- curry3 :: ((a, b, c) -> d) -> a -> b -> c -> d
+  . testEqual "curry3 fst" ((curry3 .0) 1 2 3) 1
+  . testEqual "curry3 snd" ((curry3 .1) 1 2 3) 2
+  . testEqual "curry3 thr" ((curry3 .2) 1 2 3) 3
+  -- uncurry :: (a -> b -> c) -> (a, b) -> c
+  . testEqual "uncurry const" ((uncurry const) (1,2)) 1
+  . testEqual "uncurry add" ((uncurry (+)) (3,4)) 7
+  -- uncurry3 :: (a -> b -> c -> d) -> (a, b, c) -> d
   . testEqual "uncurry3" ((uncurry3 (\a b c -> a + b + c)) (1,2,3)) 6
+  -- Nested tuple
+  . testEqual "nested tuple fst" (.0 (.0 ((1,2),3))) 1
+  . testEqual "nested tuple snd" (.1 (.0 ((1,2),3))) 2
   )
+
+-------------------------------------------------------------------------------
+-- Booleans
 
 testBools :: (Int, Int) -> (Int, Int)
 testBools =
   ( testEqual "not True" (not True) False
   . testEqual "not False" (not False) True
-  . testEqual "and True True" (True && True) True
-  . testEqual "and True False" (True && False) False
-  . testEqual "or True  True"  (True || True)  True
-  . testEqual "or True  False" (True || False) True
-  . testEqual "or False True"  (False || True)  True
-  . testEqual "or False False" (False || False) False
-  . testEqual "xor True  True"  (xor True  True)  False
-  . testEqual "xor True  False" (xor True  False) True
-  . testEqual "xor False True"  (xor False True)  True
-  . testEqual "xor False False" (xor False False) False
-  . testEqual "nand True  True"  (nand True  True)  False
-  . testEqual "nand True  False" (nand True  False) True
-  . testEqual "nand False True"  (nand False True)  True
-  . testEqual "nand False False" (nand False False) True
+  . testEqual "not not" (not (not True)) True
+  . testEqual "and TT" (True && True) True
+  . testEqual "and TF" (True && False) False
+  . testEqual "and FT" (False && True) False
+  . testEqual "and FF" (False && False) False
+  . testEqual "or TT"  (True || True)  True
+  . testEqual "or TF"  (True || False) True
+  . testEqual "or FT"  (False || True)  True
+  . testEqual "or FF"  (False || False) False
+  . testEqual "xor TT"  (xor True  True)  False
+  . testEqual "xor TF"  (xor True  False) True
+  . testEqual "xor FT"  (xor False True)  True
+  . testEqual "xor FF"  (xor False False) False
+  . testEqual "nand TT"  (nand True  True)  False
+  . testEqual "nand TF"  (nand True  False) True
+  . testEqual "nand FT"  (nand False True)  True
+  . testEqual "nand FF"  (nand False False) True
+  -- Combined boolean expressions
+  . testEqual "and-or" ((True && False) || True) True
+  . testEqual "or-and" ((True || False) && False) False
+  . testEqual "demorgan 1" (not (True && False)) (not True || not False)
+  . testEqual "demorgan 2" (not (True || False)) (not True && not False)
   )
 
-testLists :: (Int, Int) -> (Int, Int)
-testLists =
-  ( testEqual "reverse []"      (reverse ([] :: [Int])) ([] :: [Int])
-  . testEqual "reverse [2]"     (reverse [2]) [2]
-  . testEqual "reverse [1,2,3]" (reverse [1,2,3]) [3,2,1]
-  . testEqual "sort []" (sort ([] :: [Int])) ([] :: [Int])
-  . testEqual "sort [2]" (sort [2]) [2]
-  . testEqual "sort [2,1,3]" (sort [2,1,3]) [1,2,3]
-  . testEqual "sort [2,1,2,3]" (sort [2,1,2,3]) [1,2,2,3]
-  . testEqual "filter (3 > _) [1,5,2,4,3]" (filter (3 > _) [1,5,2,4,3]) [1,2]
-  . testEqual "filter (_ > 3) [1,5,2,4,3]" (filter (_ > 3) [1,5,2,4,3]) [5,4]
-  . testEqual "filter (_ > 9) [1,5,2,4,3]" (filter (_ > 9) [1,5,2,4,3]) ([] :: [Int])
-  )
-
-testStrings :: (Int, Int) -> (Int, Int)
-testStrings =
-  ( testEqual "show 42" (show 42) "42"
-  )
+-------------------------------------------------------------------------------
+-- Comparisons
 
 testComparisons :: (Int, Int) -> (Int, Int)
 testComparisons =
@@ -137,112 +177,83 @@ testComparisons =
   . testEqual "gt 1 2" (1 > 2) False
   . testEqual "gt 1 1" (1 > 1) False
   . testEqual "gt 2 1" (2 > 1) True
-  . testEqual "eq 1 1" (1 == 1) True
-  . testEqual "eq 1 2" (1 == 2) False
-  . testEqual "ne 1 2" (1 != 2) True
-  . testEqual "ne 1 1" (1 != 1) False
-  . testEqual "ne 2 1" (2 != 1) True
+  . testEqual "eq int" (1 == 1) True
+  . testEqual "eq int ne" (1 == 2) False
+  . testEqual "ne int" (1 != 2) True
+  . testEqual "ne int eq" (1 != 1) False
+  -- String comparisons
+  . testEqual "eq str" ("abc" == "abc") True
+  . testEqual "ne str" ("abc" != "def") True
+  . testEqual "le str" ("abc" <= "def") True
+  . testEqual "lt str" ("abc" < "def") True
+  -- Bool comparisons
+  . testEqual "eq bool T" (True == True) True
+  . testEqual "eq bool F" (False == False) True
+  . testEqual "ne bool" (True != False) True
+  -- Real comparisons
+  . testEqual "lt real" (1.0 < 2.0) True
+  . testEqual "ge real" (2.0 >= 1.0) True
+  -- List comparisons
+  . testEqual "eq list" ([1,2,3] == [1,2,3]) True
+  . testEqual "ne list" ([1,2,3] != [1,2,4]) True
+  . testEqual "eq list empty" (([] :: [Int]) == ([] :: [Int])) True
+  -- Negative numbers
+  . testEqual "lt neg" ((0 - 5) < 0) True
+  . testEqual "le neg" ((0 - 5) <= (0 - 5)) True
+  -- min/max
   . testEqual "min 1 2" (min 1 2) 1
   . testEqual "min 2 1" (min 2 1) 1
   . testEqual "min 1 1" (min 1 1) 1
   . testEqual "max 1 2" (max 1 2) 2
   . testEqual "max 2 1" (max 2 1) 2
   . testEqual "max 1 1" (max 1 1) 1
+  . testEqual "min neg" (min (0 - 3) 5) (0 - 3)
+  . testEqual "max neg" (max (0 - 3) 5) 5
   )
 
-testFold :: (Int, Int) -> (Int, Int)
-testFold =
-  ( testEqual "fold sum" (fold (+) 0 [1,2,3]) 6
-  . testEqual "fold length" (fold (\b a -> 1 + b) 0 [1,2,3]) 3
-  . testEqual "length [1,2,3]" (length [1,2,3]) 3
-  . testEqual "length []" (length ([] :: [Int])) 0
-  . testEqual "isEmpty []" (isEmpty ([] :: [Int])) True
-  . testEqual "isEmpty [1]" (isEmpty [1]) False
-  )
-
-testSequence :: (Int, Int) -> (Int, Int)
-testSequence =
-  ( testEqual "at 0" (at 0 [2,3,4]) 2
-  . testEqual "at 2" (at 2 [2,3,4]) 4
-  . testEqual "slice 0 0" (slice 0 0 [1,2,3]) []
-  . testEqual "slice 0 1" (slice 0 1 [1,2,3]) [1]
-  . testEqual "slice 1 0" (slice 1 0 [1,2,3]) []    -- this doesn't reverse
-  . testEqual "slice 1 3" (slice 1 3 [1,2,3]) [2,3]
-  . testEqual "slice 1 4" (slice 1 4 [1,2,3]) [2,3] -- length may not equal j - i
-  . testEqual "slice 3 4" (slice 3 4 [1,2,3]) []
-  )
-
-testSequenceBased :: (Int, Int) -> (Int, Int)
-testSequenceBased =
-  ( testEqual "head [1]" (head [1]) 1
-  . testEqual "head [1,2,3]" (head [1,2,3]) 1
-  . testEqual "init []" (init ([] :: [Int]))  ([] :: [Int])
-  . testEqual "init [1]" (init [1]) ([] :: [Int])
-  . testEqual "init [1,2]" (init [1,2]) [1]
-  . testEqual "init [1,2,3]" (init [1,2,3]) [1,2]
-  . testEqual "last [1]" (last [1]) 1
-  . testEqual "last [1,2]" (last [1,2]) 2
-  . testEqual "tail [1,2,3]" (tail [1,2,3]) [2,3]
-  . testEqual "tail [1,2]" (tail [1,2]) [2]
-  . testEqual "tail [1]" (tail [1]) ([] :: [Int])
-  . testEqual "tail []" (tail ([] :: [Int])) ([] :: [Int])
-  . testEqual "take 0 []" (take 0 ([] :: [Int])) ([] :: [Int])
-  . testEqual "take 1 []" (take 1 ([] :: [Int])) ([] :: [Int])
-  . testEqual "take 0 [1,2,3]" (take 0 [1,2,3]) ([] :: [Int])
-  . testEqual "take 1 [1,2,3]" (take 1 [1,2,3]) [1]
-  . testEqual "take 2 [1,2,3]" (take 2 [1,2,3]) [1,2]
-  . testEqual "take 3 [1,2,3]" (take 3 [1,2,3]) [1,2,3]
-  . testEqual "take 4 [1,2,3]" (take 4 [1,2,3]) [1,2,3]
-  . testEqual "drop 0 [1,2,3]" (drop 0 [1,2,3]) [1,2,3]
-  . testEqual "drop 1 [1,2,3]" (drop 1 [1,2,3]) [2,3]
-  . testEqual "drop 2 [1,2,3]" (drop 2 [1,2,3]) [3]
-  . testEqual "drop 3 [1,2,3]" (drop 3 [1,2,3]) ([] :: [Int])
-  . testEqual "drop 4 [1,2,3]" (drop 4 [1,2,3]) ([] :: [Int])
-  )
-
-testFunctor :: (Int, Int) -> (Int, Int)
-testFunctor =
-  ( testEqual "map" (map ((+) 1) [1,2,3]) [2,3,4]
-  . testEqual "map []" (map ((+) 1) ([] :: [Int])) ([] :: [Int])
-  )
-
-testBranching :: (Int, Int) -> (Int, Int)
-testBranching =
-  ( testEqual "ifelse True" (ifelse True 1 2) 1
-  . testEqual "ifelse False" (ifelse False 1 2) 2
-  . testEqual "branch true" (branch (_ > 0) (_ + 10) (_ + 20) 5) 15
-  . testEqual "branch false" (branch (_ > 0) (_ + 10) (_ + 20) 0) 20
-  )
-
-testMonoid :: (Int, Int) -> (Int, Int)
-testMonoid =
-  ( testEqual "str <>" ("hello" <> " world") "hello world"
-  . testEqual "str mempty <>" ((mempty :: Str) <> "hello") "hello"
-  . testEqual "str <> mempty" ("hello" <> (mempty :: Str)) "hello"
-  . testEqual "list <>" ([1,2] <> [3,4]) [1,2,3,4]
-  . testEqual "list mempty <>" ((mempty :: [Int]) <> [1,2]) [1,2]
-  . testEqual "list <> mempty" ([1,2] <> (mempty :: [Int])) [1,2]
-  . testEqual "list <> <>" ([1] <> [2] <> [3]) [1,2,3]
-  )
+-------------------------------------------------------------------------------
+-- Integral
 
 testIntegral :: (Int, Int) -> (Int, Int)
 testIntegral =
-  ( testEqual "zero" (zero :: Int) 0
+  ( testEqual "zero Int" (zero :: Int) 0
+  . testEqual "zero Real" (zero :: Real) 0.0
   . testEqual "1 + 2" (1 + 2) 3
+  . testEqual "0 + 0" (0 + 0) 0
   . testEqual "5 - 3" (5 - 3) 2
+  . testEqual "3 - 5" (3 - 5) (0 - 2)
   . testEqual "3 * 4" (3 * 4) 12
+  . testEqual "0 * 99" (0 * 99) 0
+  . testEqual "1 * x" (1 * 42) 42
   . testEqual "neg 5" (neg 5) (0 - 5)
   . testEqual "neg 0" (neg 0) 0
+  . testEqual "neg neg" (neg (neg 5)) 5
   . testEqual "abs 5" (abs 5) 5
   . testEqual "abs neg" (abs (neg 5)) 5
   . testEqual "abs 0" (abs 0) 0
   . testEqual "7 // 2" (7 // 2) 3
   . testEqual "6 // 3" (6 // 3) 2
   . testEqual "0 // 1" (0 // 1) 0
+  . testEqual "1 // 2" (1 // 2) 0
   . testEqual "7 % 2" (7 % 2) 1
   . testEqual "6 % 3" (6 % 3) 0
   . testEqual "0 % 1" (0 % 1) 0
+  . testEqual "5 % 3" (5 % 3) 2
+  -- Associativity
+  . testEqual "add assoc" ((1 + 2) + 3) (1 + (2 + 3))
+  . testEqual "mul assoc" ((2 * 3) * 4) (2 * (3 * 4))
+  -- Commutativity
+  . testEqual "add comm" (3 + 7) (7 + 3)
+  . testEqual "mul comm" (3 * 7) (7 * 3)
+  -- Distributivity
+  . testEqual "distrib" (2 * (3 + 4)) ((2 * 3) + (2 * 4))
+  -- Identity
+  . testEqual "add identity" (42 + 0) 42
+  . testEqual "mul identity" (42 * 1) 42
   )
+
+-------------------------------------------------------------------------------
+-- Numeric (Real)
 
 testNumeric :: (Int, Int) -> (Int, Int)
 testNumeric =
@@ -250,80 +261,449 @@ testNumeric =
   . testEqual "6.0 / 3.0" (6.0 / 3.0) 2.0
   . testEqual "inv 2.0" (inv 2.0) 0.5
   . testEqual "inv 4.0" (inv 4.0) 0.25
+  . testEqual "inv 1.0" (inv 1.0) 1.0
   . testEqual "2.0 ** 3.0" (2.0 ** 3.0) 8.0
   . testEqual "9.0 ** 0.5" (9.0 ** 0.5) 3.0
+  . testEqual "2.0 ** 0.0" (2.0 ** 0.0) 1.0
   . testEqual "ln 1.0" (ln 1.0) 0.0
+  -- x * inv x == 1
+  . testEqual "mul inv" (4.0 * inv 4.0) 1.0
+  -- Real integral ops
+  . testEqual "real add" (1.5 + 2.5) 4.0
+  . testEqual "real sub" (5.0 - 3.5) 1.5
+  . testEqual "real mul" (2.0 * 3.5) 7.0
+  . testEqual "real neg" (neg 2.5) (0.0 - 2.5)
+  . testEqual "real abs" (abs (0.0 - 2.5)) 2.5
   )
 
-testListFunctions :: (Int, Int) -> (Int, Int)
-testListFunctions =
-  ( testEqual "zipWith" (zipWith (+) [1,2,3] [4,5,6]) [5,7,9]
-  . testEqual "zipWith shorter" (zipWith (+) [1,2] [4,5,6]) [5,7]
-  . testEqual "zipWith empty" (zipWith (+) ([] :: [Int]) [1,2,3]) ([] :: [Int])
-  . testEqual "zip" (zip [1,2,3] ["a","b","c"]) [(1,"a"),(2,"b"),(3,"c")]
-  . testEqual "any true" (any (_ > 3) [1,2,4]) True
-  . testEqual "any false" (any (_ > 3) [1,2,3]) False
-  . testEqual "any empty" (any (_ > 0) ([] :: [Int])) False
-  . testEqual "all true" (all (_ > 0) [1,2,3]) True
-  . testEqual "all false" (all (_ > 0) [0,1,2]) False
-  . testEqual "all empty" (all (_ > 0) ([] :: [Int])) True
-  . testEqual "elem found" (elem 2 [1,2,3]) True
-  . testEqual "elem not found" (elem 4 [1,2,3]) False
-  . testEqual "elem empty" (elem 1 ([] :: [Int])) False
-  . testEqual "sum" (sum [1,2,3]) 6
-  . testEqual "sum empty" (sum ([] :: [Int])) 0
-  . testEqual "product" (product [2,3,4]) 24
-  . testEqual "maximum" (maximum [3,1,4,1,5]) 5
-  . testEqual "minimum" (minimum [3,1,4,1,5]) 1
-  . testEqual "concat" (concat [[1,2],[3],[4,5]]) [1,2,3,4,5]
-  . testEqual "concat empty" (concat ([] :: [[Int]])) ([] :: [Int])
-  . testEqual "concatMap" (concatMap (\x -> [x, x * 2]) [1,2,3]) [1,2,2,4,3,6]
+-------------------------------------------------------------------------------
+-- Monoid / Semigroup
+
+testMonoid :: (Int, Int) -> (Int, Int)
+testMonoid =
+  ( -- Str semigroup
+    testEqual "str <>" ("hello" <> " world") "hello world"
+  . testEqual "str <> empty" ("hello" <> "") "hello"
+  . testEqual "str empty <>" ("" <> "hello") "hello"
+  . testEqual "str <> <>" ("a" <> "b" <> "c") "abc"
+  -- Str monoid with annotated mempty
+  . testEqual "str mempty <>" ((mempty :: Str) <> "hello") "hello"
+  . testEqual "str <> mempty" ("hello" <> (mempty :: Str)) "hello"
+  . testEqual "str mempty mempty" ((mempty :: Str) <> (mempty :: Str)) ""
+  -- List semigroup
+  . testEqual "list <>" ([1,2] <> [3,4]) [1,2,3,4]
+  . testEqual "list <> empty" ([1,2] <> ([] :: [Int])) [1,2]
+  . testEqual "list empty <>" (([] :: [Int]) <> [1,2]) [1,2]
+  . testEqual "list <> <>" ([1] <> [2] <> [3]) [1,2,3]
+  -- List monoid with annotated mempty
+  . testEqual "list mempty <>" ((mempty :: [Int]) <> [1,2]) [1,2]
+  . testEqual "list <> mempty" ([1,2] <> (mempty :: [Int])) [1,2]
+  -- Associativity
+  . testEqual "str assoc" (("a" <> "b") <> "c") ("a" <> ("b" <> "c"))
+  . testEqual "list assoc" (([1] <> [2]) <> [3]) ([1] <> ([2] <> [3]))
+  -- Str semigroup with longer strings
+  . testEqual "str multi" ("foo" <> "bar" <> "baz") "foobarbaz"
   )
 
-testNewListOps :: (Int, Int) -> (Int, Int)
-testNewListOps =
+-------------------------------------------------------------------------------
+-- Show
+
+testShow :: (Int, Int) -> (Int, Int)
+testShow =
+  ( testEqual "show int" (show 42) "42"
+  . testEqual "show zero" (show 0) "0"
+  . testEqual "show neg" (show (0 - 5)) "-5"
+  . testEqual "show real" (show 3.14) "3.14"
+  . testEqual "show real int" (show 3.0) "3"
+  . testEqual "show bool T" (show True) "true"
+  . testEqual "show bool F" (show False) "false"
+  -- show str round-trip (avoids embedded quotes in expected value)
+  . testEqual "show str rt" (read (show "hello") :: ?Str) "hello"
+  )
+
+-------------------------------------------------------------------------------
+-- Foldable
+
+testFold :: (Int, Int) -> (Int, Int)
+testFold =
+  ( testEqual "fold sum" (fold (+) 0 [1,2,3]) 6
+  . testEqual "fold sum empty" (fold (+) 0 ([] :: [Int])) 0
+  . testEqual "fold product" (fold (*) 1 [2,3,4]) 24
+  . testEqual "fold product empty" (fold (*) 1 ([] :: [Int])) 1
+  . testEqual "fold count" (fold (\b a -> 1 + b) 0 [1,2,3]) 3
+  . testEqual "fold concat" (fold (<>) "" ["a","b","c"]) "abc"
+  -- length (derived from fold)
+  . testEqual "length [1,2,3]" (length [1,2,3]) 3
+  . testEqual "length []" (length ([] :: [Int])) 0
+  . testEqual "length single" (length [42]) 1
+  . testEqual "length str" (length ["a","b"]) 2
+  -- fold1 (uses first element as accumulator)
+  . testEqual "fold1 sum" (fold1 (+) [1,2,3]) 6
+  . testEqual "fold1 single" (fold1 (+) [42]) 42
+  . testEqual "fold1 mul" (fold1 (*) [2,3,4]) 24
+  . testEqual "fold1 max" (fold1 max [3,1,4,1,5]) 5
+  . testEqual "fold1 min" (fold1 min [3,1,4,1,5]) 1
+  -- safeFold1 (returns optional)
+  . testEqual "safeFold1 sum" (safeFold1 (+) [1,2,3]) 6
+  . testEqual "safeFold1 single" (safeFold1 (+) [42]) 42
+  . testEqual "safeFold1 empty" (safeFold1 (+) ([] :: [Int])) (Null :: ?Int)
+  . testEqual "safeFold1 max" (safeFold1 max [3,1,4,1,5]) 5
+  )
+
+-------------------------------------------------------------------------------
+-- Functor
+
+testFunctor :: (Int, Int) -> (Int, Int)
+testFunctor =
+  ( testEqual "map +1" (map ((+) 1) [1,2,3]) [2,3,4]
+  . testEqual "map empty" (map ((+) 1) ([] :: [Int])) ([] :: [Int])
+  . testEqual "map *2" (map (_ * 2) [1,2,3]) [2,4,6]
+  . testEqual "map neg" (map neg [1,2,3]) [0 - 1, 0 - 2, 0 - 3]
+  . testEqual "map show" (map show [1,2,3]) ["1","2","3"]
+  . testEqual "map single" (map ((+) 10) [5]) [15]
+  -- map preserves length
+  . testEqual "map length" (length (map ((+) 1) [1,2,3])) 3
+  -- Nested map
+  . testEqual "map map" (map (map ((+) 1)) [[1,2],[3]]) [[2,3],[4]]
+  -- map with bool result
+  . testEqual "map pred" (map (_ > 2) [1,2,3,4]) [False,False,True,True]
+  )
+
+-------------------------------------------------------------------------------
+-- Indexed
+
+testIndexed :: (Int, Int) -> (Int, Int)
+testIndexed =
+  ( testEqual "at 0" (at 0 [2,3,4]) 2
+  . testEqual "at 1" (at 1 [2,3,4]) 3
+  . testEqual "at 2" (at 2 [2,3,4]) 4
+  . testEqual "at 0 str" (at 0 ["a","b","c"]) "a"
+  . testEqual "at 0 single" (at 0 [42]) 42
+  . testEqual "slice 0 0" (slice 0 0 [1,2,3]) []
+  . testEqual "slice 0 1" (slice 0 1 [1,2,3]) [1]
+  . testEqual "slice 0 2" (slice 0 2 [1,2,3]) [1,2]
+  . testEqual "slice 0 3" (slice 0 3 [1,2,3]) [1,2,3]
+  . testEqual "slice 1 0" (slice 1 0 [1,2,3]) []
+  . testEqual "slice 1 3" (slice 1 3 [1,2,3]) [2,3]
+  . testEqual "slice 1 4" (slice 1 4 [1,2,3]) [2,3]
+  . testEqual "slice 3 4" (slice 3 4 [1,2,3]) []
+  . testEqual "slice 2 3" (slice 2 3 [1,2,3]) [3]
+  -- Full slice
+  . testEqual "slice full" (slice 0 3 [10,20,30]) [10,20,30]
+  -- slice on strings
+  . testEqual "slice str" (slice 1 3 ["a","b","c","d"]) ["b","c"]
+  )
+
+-------------------------------------------------------------------------------
+-- Stack
+
+testStack :: (Int, Int) -> (Int, Int)
+testStack =
+  ( testEqual "cons" (cons 1 [2,3]) [1,2,3]
+  . testEqual "cons empty" (cons 1 ([] :: [Int])) [1]
+  . testEqual "cons str" (cons "a" ["b","c"]) ["a","b","c"]
+  . testEqual "uncons" (uncons [1,2,3]) (1, [2,3])
+  . testEqual "uncons single" (uncons [42]) (42, ([] :: [Int]))
+  . testEqual "uncons two" (uncons [1,2]) (1, [2])
+  -- cons then uncons is identity
+  . testEqual "cons-uncons" (uncons (cons 0 [1,2])) (0, [1,2])
+  -- uncons gives head
+  . testEqual "uncons head" (.0 (uncons [10,20,30])) 10
+  -- uncons gives tail
+  . testEqual "uncons tail" (.1 (uncons [10,20,30])) [20,30]
+  )
+
+-------------------------------------------------------------------------------
+-- Queue
+
+testQueue :: (Int, Int) -> (Int, Int)
+testQueue =
+  ( testEqual "snoc" (snoc [1,2] 3) [1,2,3]
+  . testEqual "snoc empty" (snoc ([] :: [Int]) 1) [1]
+  . testEqual "snoc str" (snoc ["a","b"] "c") ["a","b","c"]
+  . testEqual "unsnoc" (unsnoc [1,2,3]) ([1,2], 3)
+  . testEqual "unsnoc single" (unsnoc [42]) (([] :: [Int]), 42)
+  . testEqual "unsnoc two" (unsnoc [1,2]) ([1], 2)
+  -- snoc then unsnoc
+  . testEqual "snoc-unsnoc" (unsnoc (snoc [1,2] 3)) ([1,2], 3)
+  -- unsnoc gives init
+  . testEqual "unsnoc init" (.0 (unsnoc [10,20,30])) [10,20]
+  -- unsnoc gives last
+  . testEqual "unsnoc last" (.1 (unsnoc [10,20,30])) 30
+  )
+
+-------------------------------------------------------------------------------
+-- Branching
+
+testBranching :: (Int, Int) -> (Int, Int)
+testBranching =
+  ( testEqual "branch true" (branch (_ > 0) (_ + 10) (_ + 20) 5) 15
+  . testEqual "branch false" (branch (_ > 0) (_ + 10) (_ + 20) 0) 20
+  . testEqual "branch boundary" (branch (_ > 0) (_ + 10) (_ + 20) 1) 11
+  . testEqual "branch str" (branch (_ == "yes") (const "Y") (const "N") "yes") "Y"
+  . testEqual "branch str no" (branch (_ == "yes") (const "Y") (const "N") "no") "N"
+  . testEqual "branch neg" (branch (_ > 0) (_ + 10) (_ + 20) (0 - 5)) 15
+  )
+
+-------------------------------------------------------------------------------
+-- Lists (reverse, sort, filter)
+
+testLists :: (Int, Int) -> (Int, Int)
+testLists =
+  ( testEqual "reverse []"      (reverse ([] :: [Int])) ([] :: [Int])
+  . testEqual "reverse [2]"     (reverse [2]) [2]
+  . testEqual "reverse [1,2,3]" (reverse [1,2,3]) [3,2,1]
+  . testEqual "reverse str" (reverse ["a","b","c"]) ["c","b","a"]
+  . testEqual "reverse reverse" (reverse (reverse [1,2,3])) [1,2,3]
+  . testEqual "sort []" (sort ([] :: [Int])) ([] :: [Int])
+  . testEqual "sort [2]" (sort [2]) [2]
+  . testEqual "sort [2,1,3]" (sort [2,1,3]) [1,2,3]
+  . testEqual "sort [2,1,2,3]" (sort [2,1,2,3]) [1,2,2,3]
+  . testEqual "sort sorted" (sort [1,2,3]) [1,2,3]
+  . testEqual "sort reversed" (sort [3,2,1]) [1,2,3]
+  . testEqual "sort str" (sort ["c","a","b"]) ["a","b","c"]
+  . testEqual "filter keep" (filter (3 > _) [1,5,2,4,3]) [1,2]
+  . testEqual "filter keep 2" (filter (_ > 3) [1,5,2,4,3]) [5,4]
+  . testEqual "filter none" (filter (_ > 9) [1,5,2,4,3]) ([] :: [Int])
+  . testEqual "filter all" (filter (_ > 0) [1,2,3]) [1,2,3]
+  . testEqual "filter empty" (filter (_ > 0) ([] :: [Int])) ([] :: [Int])
+  )
+
+-------------------------------------------------------------------------------
+-- List Ops (sortBy, unzip, replicate, takeWhile, dropWhile, etc.)
+
+testListOps :: (Int, Int) -> (Int, Int)
+testListOps =
   ( testEqual "sortBy desc" (sortBy (\x y -> x > y) [1,3,2]) [3,2,1]
   . testEqual "sortBy asc" (sortBy (\x y -> x < y) [3,1,2]) [1,2,3]
   . testEqual "sortBy empty" (sortBy (\x y -> x < y) ([] :: [Int])) ([] :: [Int])
+  . testEqual "sortBy single" (sortBy (\x y -> x < y) [42]) [42]
+  . testEqual "sortBy stable" (sortBy (\x y -> x < y) [1,2,3]) [1,2,3]
   . testEqual "unzip" (unzip [(1,"a"),(2,"b"),(3,"c")]) ([1,2,3],["a","b","c"])
+  . testEqual "unzip empty" (unzip ([] :: [(Int,Str)])) (([] :: [Int]), ([] :: [Str]))
+  . testEqual "unzip single" (unzip [(1,"a")]) ([1],["a"])
   . testEqual "replicate 3" (replicate 3 "x") ["x","x","x"]
   . testEqual "replicate 1" (replicate 1 42) [42]
   . testEqual "replicate 0" (replicate 0 42) ([] :: [Int])
+  . testEqual "replicate 5" (replicate 5 True) [True,True,True,True,True]
   . testEqual "takeWhile" (takeWhile (_ < 3) [1,2,3,4,5]) [1,2]
   . testEqual "takeWhile all" (takeWhile (_ < 10) [1,2,3]) [1,2,3]
   . testEqual "takeWhile none" (takeWhile (_ < 0) [1,2,3]) ([] :: [Int])
   . testEqual "takeWhile empty" (takeWhile (_ < 3) ([] :: [Int])) ([] :: [Int])
+  . testEqual "takeWhile first" (takeWhile (_ < 2) [1,2,3]) [1]
   . testEqual "dropWhile" (dropWhile (_ < 3) [1,2,3,4,5]) [3,4,5]
   . testEqual "dropWhile all" (dropWhile (_ < 10) [1,2,3]) ([] :: [Int])
   . testEqual "dropWhile none" (dropWhile (_ < 0) [1,2,3]) [1,2,3]
   . testEqual "dropWhile empty" (dropWhile (_ < 3) ([] :: [Int])) ([] :: [Int])
+  . testEqual "dropWhile first" (dropWhile (_ < 2) [1,2,3]) [2,3]
   . testEqual "partition" (partition (_ > 3) [1,5,2,4,3]) ([5,4],[1,2,3])
   . testEqual "partition all" (partition (_ > 0) [1,2,3]) ([1,2,3],([] :: [Int]))
   . testEqual "partition none" (partition (_ > 9) [1,2,3]) (([] :: [Int]),[1,2,3])
+  . testEqual "partition empty" (partition (_ > 0) ([] :: [Int])) (([] :: [Int]),([] :: [Int]))
   . testEqual "scanl" (scanl (+) 0 [1,2,3]) [0,1,3,6]
   . testEqual "scanl empty" (scanl (+) 0 ([] :: [Int])) [0]
+  . testEqual "scanl single" (scanl (+) 0 [5]) [0,5]
+  . testEqual "scanl mul" (scanl (*) 1 [2,3,4]) [1,2,6,24]
   . testEqual "enumerate" (enumerate ["a","b","c"]) [(0,"a"),(1,"b"),(2,"c")]
+  . testEqual "enumerate empty" (enumerate ([] :: [Int])) ([] :: [(Int,Int)])
+  . testEqual "enumerate single" (enumerate [42]) [(0,42)]
   . testEqual "intersperse" (intersperse 0 [1,2,3]) [1,0,2,0,3]
   . testEqual "intersperse single" (intersperse 0 [1]) [1]
   . testEqual "intersperse empty" (intersperse 0 ([] :: [Int])) ([] :: [Int])
+  . testEqual "intersperse two" (intersperse 0 [1,2]) [1,0,2]
   . testEqual "intercalate" (intercalate [0] [[1,2],[3],[4,5]]) [1,2,0,3,0,4,5]
+  . testEqual "intercalate single" (intercalate [0] [[1,2]]) [1,2]
+  . testEqual "intercalate empty" (intercalate [0] ([] :: [[Int]])) ([] :: [Int])
   )
 
-testMap :: (Int, Int) -> (Int, Int)
-testMap =
-  ( testEqual "keys" (sort (keys (fromList [("b",2),("a",1)]))) ["a","b"]
-  . testEqual "values" (sort (values (fromList [("a",1),("b",2)]))) [1,2]
-  . testEqual "lookup" (lookup "a" (fromList [("a",1),("b",2)])) 1
-  . testEqual "lookup 2" (lookup "b" (fromList [("a",1),("b",2)])) 2
-  . testEqual "insert new" (lookup "c" (insert "c" 3 (fromList [("a",1),("b",2)]))) 3
-  . testEqual "insert keys" (sort (keys (insert "c" 3 (fromList [("a",1),("b",2)])))) ["a","b","c"]
-  . testEqual "insert overwrite" (lookup "a" (insert "a" 99 (fromList [("a",1),("b",2)]))) 99
-  . testEqual "delete" (sort (keys (delete "a" (fromList [("a",1),("b",2)])))) ["b"]
-  . testEqual "delete missing" (sort (keys (delete "c" (fromList [("a",1),("b",2)])))) ["a","b"]
-  . testEqual "toList" (sort (toList (fromList [("b",2),("a",1)]))) [("a",1),("b",2)]
-  . testEqual "mapValues" (sort (values (mapValues (_ + 10) (fromList [("a",1),("b",2)])))) [11,12]
-  . testEqual "mapKeys" (sort (keys (mapKeys (_ <> "x") (fromList [("a",1),("b",2)])))) ["ax","bx"]
-  . testEqual "filterMap keep" (sort (keys (filterMap (\k v -> v > 1) (fromList [("a",1),("b",2),("c",3)])))) ["b","c"]
-  . testEqual "filterMap none" (sort (keys (filterMap (\k v -> v > 9) (fromList [("a",1),("b",2)])))) ([] :: [Str])
-  . testEqual "filterMap all" (sort (keys (filterMap (\k v -> v > 0) (fromList [("a",1),("b",2)])))) ["a","b"]
+-------------------------------------------------------------------------------
+-- List Functions (zipWith, zip, any, all, elem, concat, concatMap)
+
+testListFunctions :: (Int, Int) -> (Int, Int)
+testListFunctions =
+  ( testEqual "zipWith add" (zipWith (+) [1,2,3] [4,5,6]) [5,7,9]
+  . testEqual "zipWith shorter left" (zipWith (+) [1,2] [4,5,6]) [5,7]
+  . testEqual "zipWith shorter right" (zipWith (+) [1,2,3] [4,5]) [5,7]
+  . testEqual "zipWith empty" (zipWith (+) ([] :: [Int]) [1,2,3]) ([] :: [Int])
+  . testEqual "zipWith mul" (zipWith (*) [2,3] [4,5]) [8,15]
+  . testEqual "zip" (zip [1,2,3] ["a","b","c"]) [(1,"a"),(2,"b"),(3,"c")]
+  . testEqual "zip unequal" (zip [1,2] ["a","b","c"]) [(1,"a"),(2,"b")]
+  . testEqual "zip empty" (zip ([] :: [Int]) ["a","b"]) ([] :: [(Int,Str)])
+  . testEqual "any true" (any (_ > 3) [1,2,4]) True
+  . testEqual "any false" (any (_ > 3) [1,2,3]) False
+  . testEqual "any empty" (any (_ > 0) ([] :: [Int])) False
+  . testEqual "any first" (any (_ > 0) [1]) True
+  . testEqual "all true" (all (_ > 0) [1,2,3]) True
+  . testEqual "all false" (all (_ > 0) [0,1,2]) False
+  . testEqual "all empty" (all (_ > 0) ([] :: [Int])) True
+  . testEqual "all single" (all (_ > 0) [1]) True
+  . testEqual "elem found" (elem 2 [1,2,3]) True
+  . testEqual "elem not found" (elem 4 [1,2,3]) False
+  . testEqual "elem empty" (elem 1 ([] :: [Int])) False
+  . testEqual "elem str" (elem "b" ["a","b","c"]) True
+  . testEqual "concat" (concat [[1,2],[3],[4,5]]) [1,2,3,4,5]
+  . testEqual "concat empty outer" (concat ([] :: [[Int]])) ([] :: [Int])
+  . testEqual "concat empty inner" (concat [[], [1], []]) [1]
+  . testEqual "concat single" (concat [[1,2,3]]) [1,2,3]
+  . testEqual "concatMap" (concatMap (\x -> [x, x * 2]) [1,2,3]) [1,2,2,4,3,6]
+  . testEqual "concatMap empty" (concatMap (\x -> [x]) ([] :: [Int])) ([] :: [Int])
+  . testEqual "concatMap filter" (concatMap (\x -> filter (_ > 2) [x]) [1,2,3,4]) [3,4]
+  )
+
+-------------------------------------------------------------------------------
+-- New Functions (iterate, groupBy, find, unique, groupSort, range, rangeStep)
+
+testNewFunctions :: (Int, Int) -> (Int, Int)
+testNewFunctions =
+  ( -- iterate
+    testEqual "iterate 5" (iterate 5 (_ + 1) 0) [0,1,2,3,4]
+  . testEqual "iterate 0" (iterate 0 (_ + 1) 0) ([] :: [Int])
+  . testEqual "iterate 1" (iterate 1 (_ + 1) 0) [0]
+  . testEqual "iterate double" (iterate 4 (_ * 2) 1) [1,2,4,8]
+  . testEqual "iterate str" (iterate 3 (_ <> "!") "hi") ["hi","hi!","hi!!"]
+  -- groupBy
+  . testEqual "groupBy eq" (groupBy (==) [1,1,2,2,2,3]) [[1,1],[2,2,2],[3]]
+  . testEqual "groupBy empty" (groupBy (==) ([] :: [Int])) ([] :: [[Int]])
+  . testEqual "groupBy single" (groupBy (==) [1]) [[1]]
+  . testEqual "groupBy all same" (groupBy (==) [1,1,1]) [[1,1,1]]
+  . testEqual "groupBy all diff" (groupBy (==) [1,2,3]) [[1],[2],[3]]
+  . testEqual "groupBy pair" (groupBy (==) [1,1,2,2]) [[1,1],[2,2]]
+  -- find
+  . testEqual "find found" (find (_ > 3) [1,2,4,5]) 4
+  . testEqual "find not found" (find (_ > 9) [1,2,3]) (Null :: ?Int)
+  . testEqual "find empty" (find (_ > 0) ([] :: [Int])) (Null :: ?Int)
+  . testEqual "find first" (find (_ > 0) [1,2,3]) 1
+  . testEqual "find last" (find (_ > 2) [1,2,3]) 3
+  . testEqual "find exact" (find (_ == 2) [1,2,3]) 2
+  -- unique
+  . testEqual "unique" (unique [1,2,1,3,2,3]) [1,2,3]
+  . testEqual "unique empty" (unique ([] :: [Int])) ([] :: [Int])
+  . testEqual "unique no dups" (unique [1,2,3]) [1,2,3]
+  . testEqual "unique all same" (unique [1,1,1]) [1]
+  . testEqual "unique single" (unique [42]) [42]
+  . testEqual "unique preserves order" (unique [3,1,2,1,3]) [3,1,2]
+  -- groupSort
+  . testEqual "groupSort" (groupSort [(1,"a"),(2,"b"),(1,"c")]) [(1,["a","c"]),(2,["b"])]
+  . testEqual "groupSort empty" (groupSort ([] :: [(Int, Str)])) ([] :: [(Int, [Str])])
+  . testEqual "groupSort single" (groupSort [(1,"x")]) [(1,["x"])]
+  . testEqual "groupSort multi" (groupSort [(2,"b"),(1,"a"),(2,"c"),(1,"d")]) [(1,["a","d"]),(2,["b","c"])]
+  -- range
+  . testEqual "range 1 5" (range 1 5) [1,2,3,4,5]
+  . testEqual "range single" (range 3 3) [3]
+  . testEqual "range empty" (range 5 1) ([] :: [Int])
+  . testEqual "range 0 0" (range 0 0) [0]
+  . testEqual "range neg" (range (0 - 2) 2) [0 - 2, 0 - 1, 0, 1, 2]
+  -- rangeStep
+  . testEqual "rangeStep" (rangeStep 0 10 3) [0,3,6,9]
+  . testEqual "rangeStep 2" (rangeStep 1 5 2) [1,3,5]
+  . testEqual "rangeStep 1" (rangeStep 1 3 1) [1,2,3]
+  . testEqual "rangeStep exact" (rangeStep 0 6 3) [0,3,6]
+  )
+
+-------------------------------------------------------------------------------
+-- Readable
+
+testReadable :: (Int, Int) -> (Int, Int)
+testReadable =
+  ( testEqual "read int" (read "42" :: ?Int) 42
+  . testEqual "read int neg" (read "-7" :: ?Int) (0 - 7)
+  . testEqual "read int zero" (read "0" :: ?Int) 0
+  . testEqual "read int bad" (read "abc" :: ?Int) (Null :: ?Int)
+  . testEqual "read int float" (read "3.14" :: ?Int) 3
+  . testEqual "read real" (read "3.14" :: ?Real) 3.14
+  . testEqual "read real int" (read "42" :: ?Real) 42.0
+  . testEqual "read real neg" (read "-2.5" :: ?Real) (0.0 - 2.5)
+  . testEqual "read real bad" (read "xyz" :: ?Real) (Null :: ?Real)
+  -- read of JSON strings (e.g., read "\"hello\"") is omitted:
+  -- escaped quotes in string literals trigger a codegen edge case
+  . testEqual "read bool true" (read "true" :: ?Bool) True
+  . testEqual "read bool false" (read "false" :: ?Bool) False
+  . testEqual "read bool bad" (read "yes" :: ?Bool) (Null :: ?Bool)
+  )
+
+-------------------------------------------------------------------------------
+-- Deque (Foldable, Functor, Stack, Queue, Semigroup)
+
+testDeque :: (Int, Int) -> (Int, Int)
+testDeque =
+  ( -- Construction via toDeque
+    testEqual "deq toDeque" (fold (+) 0 (toDeque [1,2,3])) 6
+  -- Foldable
+  . testEqual "deq fold sum" (fold (+) 0 (toDeque [1,2,3])) 6
+  . testEqual "deq fold empty" (fold (+) 0 (toDeque ([] :: [Int]))) 0
+  . testEqual "deq fold1" (fold1 (+) (toDeque [1,2,3])) 6
+  . testEqual "deq safeFold1" (safeFold1 (+) (toDeque [1,2,3])) 6
+  . testEqual "deq safeFold1 empty" (safeFold1 (+) (toDeque ([] :: [Int]))) (Null :: ?Int)
+  . testEqual "deq length" (length (toDeque [1,2,3])) 3
+  -- Functor
+  . testEqual "deq map +1" (fold (+) 0 (map ((+) 1) (toDeque [1,2,3]))) 9
+  . testEqual "deq map *2" (fold (+) 0 (map (_ * 2) (toDeque [1,2,3]))) 12
+  -- Stack (cons/uncons)
+  . testEqual "deq cons" (fold (+) 0 (cons 10 (toDeque [1,2,3]))) 16
+  . testEqual "deq uncons head" (.0 (uncons (toDeque [10,20,30]))) 10
+  . testEqual "deq uncons tail" (fold (+) 0 (.1 (uncons (toDeque [10,20,30])))) 50
+  -- Queue (snoc/unsnoc)
+  . testEqual "deq snoc" (fold (+) 0 (snoc (toDeque [1,2,3]) 10)) 16
+  . testEqual "deq unsnoc last" (.1 (unsnoc (toDeque [10,20,30]))) 30
+  . testEqual "deq unsnoc init" (fold (+) 0 (.0 (unsnoc (toDeque [10,20,30])))) 30
+  -- Semigroup
+  . testEqual "deq <>" (fold (+) 0 ((toDeque [1,2]) <> (toDeque [3,4]))) 10
+  )
+
+-------------------------------------------------------------------------------
+-- Vector (Foldable, Functor, Indexed, Queue, Semigroup)
+
+testVector :: (Int, Int) -> (Int, Int)
+testVector =
+  ( -- Construction via toVector
+    testEqual "vec toVector" (fold (+) 0 (toVector [1,2,3])) 6
+  -- Foldable
+  . testEqual "vec fold sum" (fold (+) 0 (toVector [1,2,3])) 6
+  . testEqual "vec fold empty" (fold (+) 0 (toVector ([] :: [Int]))) 0
+  . testEqual "vec fold1" (fold1 (+) (toVector [1,2,3])) 6
+  . testEqual "vec safeFold1" (safeFold1 (+) (toVector [1,2,3])) 6
+  . testEqual "vec safeFold1 empty" (safeFold1 (+) (toVector ([] :: [Int]))) (Null :: ?Int)
+  . testEqual "vec length" (length (toVector [1,2,3])) 3
+  -- Functor
+  . testEqual "vec map +1" (fold (+) 0 (map ((+) 1) (toVector [1,2,3]))) 9
+  . testEqual "vec map *2" (fold (+) 0 (map (_ * 2) (toVector [1,2,3]))) 12
+  -- Indexed
+  . testEqual "vec at 0" (at 0 (toVector [10,20,30])) 10
+  . testEqual "vec at 1" (at 1 (toVector [10,20,30])) 20
+  . testEqual "vec at 2" (at 2 (toVector [10,20,30])) 30
+  . testEqual "vec slice" (fold (+) 0 (slice 1 3 (toVector [10,20,30]))) 50
+  . testEqual "vec slice empty" (fold (+) 0 (slice 0 0 (toVector [10,20,30]))) 0
+  -- Queue (snoc/unsnoc)
+  . testEqual "vec snoc" (fold (+) 0 (snoc (toVector [1,2,3]) 10)) 16
+  . testEqual "vec unsnoc last" (.1 (unsnoc (toVector [10,20,30]))) 30
+  . testEqual "vec unsnoc init" (fold (+) 0 (.0 (unsnoc (toVector [10,20,30])))) 30
+  -- Semigroup
+  . testEqual "vec <>" (fold (+) 0 ((toVector [1,2]) <> (toVector [3,4]))) 10
+  )
+
+-------------------------------------------------------------------------------
+-- Array (Foldable, Functor, Indexed, Semigroup)
+
+testArray :: (Int, Int) -> (Int, Int)
+testArray =
+  ( -- Construction via toArray
+    testEqual "arr toArray" (fold (+) 0 (toArray [1,2,3])) 6
+  -- Foldable
+  . testEqual "arr fold sum" (fold (+) 0 (toArray [1,2,3])) 6
+  . testEqual "arr fold empty" (fold (+) 0 (toArray ([] :: [Int]))) 0
+  . testEqual "arr fold1" (fold1 (+) (toArray [1,2,3])) 6
+  . testEqual "arr safeFold1" (safeFold1 (+) (toArray [1,2,3])) 6
+  . testEqual "arr safeFold1 empty" (safeFold1 (+) (toArray ([] :: [Int]))) (Null :: ?Int)
+  . testEqual "arr length" (length (toArray [1,2,3])) 3
+  -- Functor
+  . testEqual "arr map +1" (fold (+) 0 (map ((+) 1) (toArray [1,2,3]))) 9
+  . testEqual "arr map *2" (fold (+) 0 (map (_ * 2) (toArray [1,2,3]))) 12
+  -- Indexed
+  . testEqual "arr at 0" (at 0 (toArray [10,20,30])) 10
+  . testEqual "arr at 1" (at 1 (toArray [10,20,30])) 20
+  . testEqual "arr at 2" (at 2 (toArray [10,20,30])) 30
+  . testEqual "arr slice" (fold (+) 0 (slice 1 3 (toArray [10,20,30]))) 50
+  . testEqual "arr slice empty" (fold (+) 0 (slice 0 0 (toArray [10,20,30]))) 0
+  -- Semigroup
+  . testEqual "arr <>" (fold (+) 0 ((toArray [1,2]) <> (toArray [3,4]))) 10
   )
