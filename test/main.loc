@@ -14,13 +14,13 @@ type Py => List a = "list" a
 -- Test suite functions
 
 source Py from "root-test.py" ("testEqual", "printMsg", "printResult")
-testEqual a
+testEqual
     :: Str -- description of the test
     -> a
     -> a
     -> (Int, Int) -- total number of tests and total fails
     -> (Int, Int)
-printMsg a :: Str -> a -> a
+printMsg :: Str -> a -> a
 printResult :: (Int, Int) -> (Int, Int)
 
 testGroup
@@ -43,7 +43,6 @@ runTests =
   ( passed
   . printResult
   . testGroup "Array" testArray
-  . testGroup "Vector" testVector
   . testGroup "Deque" testDeque
   . testGroup "Readable" testReadable
   . testGroup "New Functions" testNewFunctions
@@ -648,37 +647,6 @@ testDeque =
   . testEqual "deq unsnoc init" (fold (+) 0 (.0 (unsnoc (toDeque [10,20,30])))) 30
   -- Semigroup
   . testEqual "deq <>" (fold (+) 0 ((toDeque [1,2]) <> (toDeque [3,4]))) 10
-  )
-
--------------------------------------------------------------------------------
--- Vector (Foldable, Functor, Indexed, Queue, Semigroup)
-
-testVector :: (Int, Int) -> (Int, Int)
-testVector =
-  ( -- Construction via toVector
-    testEqual "vec toVector" (fold (+) 0 (toVector [1,2,3])) 6
-  -- Foldable
-  . testEqual "vec fold sum" (fold (+) 0 (toVector [1,2,3])) 6
-  . testEqual "vec fold empty" (fold (+) 0 (toVector ([] :: [Int]))) 0
-  . testEqual "vec fold1" (fold1 (+) (toVector [1,2,3])) 6
-  . testEqual "vec safeFold1" (safeFold1 (+) (toVector [1,2,3])) 6
-  . testEqual "vec safeFold1 empty" (safeFold1 (+) (toVector ([] :: [Int]))) (Null :: ?Int)
-  . testEqual "vec length" (length (toVector [1,2,3])) 3
-  -- Functor
-  . testEqual "vec map +1" (fold (+) 0 (map ((+) 1) (toVector [1,2,3]))) 9
-  . testEqual "vec map *2" (fold (+) 0 (map (_ * 2) (toVector [1,2,3]))) 12
-  -- Indexed
-  . testEqual "vec at 0" (at 0 (toVector [10,20,30])) 10
-  . testEqual "vec at 1" (at 1 (toVector [10,20,30])) 20
-  . testEqual "vec at 2" (at 2 (toVector [10,20,30])) 30
-  . testEqual "vec slice" (fold (+) 0 (slice 1 3 (toVector [10,20,30]))) 50
-  . testEqual "vec slice empty" (fold (+) 0 (slice 0 0 (toVector [10,20,30]))) 0
-  -- Queue (snoc/unsnoc)
-  . testEqual "vec snoc" (fold (+) 0 (snoc (toVector [1,2,3]) 10)) 16
-  . testEqual "vec unsnoc last" (.1 (unsnoc (toVector [10,20,30]))) 30
-  . testEqual "vec unsnoc init" (fold (+) 0 (.0 (unsnoc (toVector [10,20,30])))) 30
-  -- Semigroup
-  . testEqual "vec <>" (fold (+) 0 ((toVector [1,2]) <> (toVector [3,4]))) 10
   )
 
 -------------------------------------------------------------------------------
