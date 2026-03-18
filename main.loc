@@ -223,18 +223,18 @@ instance Indexed Array
 
 --' A Nat-dimensioned dense vector (n-element 1D dense array)
 --' metavar: VECTOR
-type Vector n a = [a]
+type Vector (n :: Nat) a = [a]
 
 --' A Nat-dimensioned dense matrix
 --' metavar: MATRIX
-type Matrix m n a = [[a]]
+type Matrix (m :: Nat) (n :: Nat) a = [[a]]
 
 -- Dense N-dimensional tensors (built-in types with row-major contiguous storage)
-type Tensor1 d1 a
-type Tensor2 d1 d2 a
-type Tensor3 d1 d2 d3 a
-type Tensor4 d1 d2 d3 d4 a
-type Tensor5 d1 d2 d3 d4 d5 a
+type Tensor1 (d1 :: Nat) a
+type Tensor2 (d1 :: Nat) (d2 :: Nat) a
+type Tensor3 (d1 :: Nat) (d2 :: Nat) (d3 :: Nat) a
+type Tensor4 (d1 :: Nat) (d2 :: Nat) (d3 :: Nat) (d4 :: Nat) a
+type Tensor5 (d1 :: Nat) (d2 :: Nat) (d3 :: Nat) (d4 :: Nat) (d5 :: Nat) a
 
 ---------------------------------------------------------------------
 
