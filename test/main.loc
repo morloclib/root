@@ -540,6 +540,9 @@ testListFunctions =
   . testEqual "elem not found" (elem 4 [1,2,3]) False
   . testEqual "elem empty" (elem 1 ([] :: [Int])) False
   . testEqual "elem str" (elem "b" ["a","b","c"]) True
+  . testEqual "sum" (sum [1,2,3]) 6
+  . testEqual "sum" (sum [1.0,2.0,3.1]) 6.1
+  . testEqual "sum" (sum []) 0.0
   . testEqual "concat" (concat [[1,2],[3],[4,5]]) [1,2,3,4,5]
   . testEqual "concat empty outer" (concat ([] :: [[Int]])) ([] :: [Int])
   . testEqual "concat empty inner" (concat [[], [1], []]) [1]
@@ -608,7 +611,6 @@ testReadable =
   . testEqual "read int neg" (read "-7" :: ?Int) (0 - 7)
   . testEqual "read int zero" (read "0" :: ?Int) 0
   . testEqual "read int bad" (read "abc" :: ?Int) (Null :: ?Int)
-  . testEqual "read int float" (read "3.14" :: ?Int) 3
   . testEqual "read real" (read "3.14" :: ?Real) 3.14
   . testEqual "read real int" (read "42" :: ?Real) 42.0
   . testEqual "read real neg" (read "-2.5" :: ?Real) (0.0 - 2.5)

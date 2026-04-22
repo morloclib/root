@@ -96,13 +96,13 @@ type Tuple8 a b c d e f g h
 
 infixr 2 ||
 infixr 3 &&
-infixr 5 (<>)
-infixl 5 (<=)
-infixl 5 (<)
-infixl 5 (>)
-infixl 5 (>=)
-infixl 5 (==)
-infixl 5 (!=)
+infixl 4 (<=)
+infixl 4 (<)
+infixl 4 (>)
+infixl 4 (>=)
+infixl 4 (==)
+infixl 4 (!=)
+infixr 6 (<>)
 infixl 6 (+)
 infixl 6 (-)
 infixl 7 (*)
@@ -149,6 +149,13 @@ class Integral a where
   -- This is defined for integers ONLY when the power is positive
   (**) :: a -> a -> a
 
+instance Integral Real
+instance Integral Int
+instance Numeric Real
+
+instance Semigroup Str
+instance Monoid Str
+
 class Integral a => Numeric a where
   inv :: a -> a
   (/) :: a -> a -> a
@@ -194,6 +201,8 @@ class Queue f where
 --' The default homo-list with language-specific properties
 --' metavar: LIST
 type List a
+instance Semigroup (List a)
+instance Monoid (List a)
 instance Functor List
 instance Foldable List
 instance Eq (List a)
@@ -205,6 +214,8 @@ instance Queue List
 --' A list with O(n) random access and O(1) start/end access
 --' metavar: LIST
 type Deque a = List a
+instance Semigroup (Deque a)
+instance Monoid (Deque a)
 instance Functor Deque
 instance Foldable Deque
 instance Eq (Deque a)
@@ -215,6 +226,8 @@ instance Queue Deque
 --' A vector of set size
 --' metavar: LIST
 type Array a = List a
+instance Semigroup (Array a)
+instance Monoid (Array a)
 instance Functor Array
 instance Foldable Array
 instance Eq (Array a)
@@ -333,6 +346,9 @@ concat = fold (<>) mempty
 
 concatMap :: (Foldable f, Functor f) => (a -> f b) -> f a -> f b
 concatMap f xs = concat (map f xs)
+
+sum :: (Foldable f, Integral a) => f a -> a
+sum = fold (+) zero
 
 -- Sequence primitives (need language implementations)
 
