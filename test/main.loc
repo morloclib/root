@@ -49,7 +49,6 @@ runTests =
   . testGroup "List Functions" testListFunctions
   . testGroup "List Ops" testListOps
   . testGroup "Lists" testLists
-  . testGroup "Branching" testBranching
   . testGroup "Queue" testQueue
   . testGroup "Stack" testStack
   . testGroup "Indexed" testIndexed
@@ -85,9 +84,9 @@ testCombinators =
   . testEqual "starling 1" (starling const (const 42) (const 49) 99) 42
   . testEqual "starling 2" (starling const (seq 42) (const 49) 99) 99
   -- on :: (b -> b -> c) -> (a -> b) -> a -> a -> c
-  . testEqual "on add double" (on (+) (_ * 2) 3 4) 14
-  . testEqual "on eq" (on (==) (_ * 2) 3 3) True
-  . testEqual "on ne" (on (==) (_ * 2) 3 4) False
+  . testEqual "on add double" (on (+) (\x -> x * 2) 3 4) 14
+  . testEqual "on eq" (on (==) (\x -> x * 2) 3 3) True
+  . testEqual "on ne" (on (==) (\x -> x * 2) 3 4) False
   -- Composition via .
   . testEqual "compose" ((((\x -> x + 1) . (\x -> x * 2)) 3)) 7
   . testEqual "compose 2" (((show . (\x -> x + 1)) 41)) "42"
@@ -356,7 +355,7 @@ testFunctor :: (Int, Int) -> (Int, Int)
 testFunctor =
   ( testEqual "map +1" (map ((+) 1) [1,2,3]) [2,3,4]
   . testEqual "map empty" (map ((+) 1) ([] :: [Int])) ([] :: [Int])
-  . testEqual "map *2" (map (_ * 2) [1,2,3]) [2,4,6]
+  . testEqual "map *2" (map (* 2) [1,2,3]) [2,4,6]
   . testEqual "map neg" (map neg [1,2,3]) [0 - 1, 0 - 2, 0 - 3]
   . testEqual "map show" (map show [1,2,3]) ["1","2","3"]
   . testEqual "map single" (map ((+) 10) [5]) [15]
@@ -365,7 +364,7 @@ testFunctor =
   -- Nested map
   . testEqual "map map" (map (map ((+) 1)) [[1,2],[3]]) [[2,3],[4]]
   -- map with bool result
-  . testEqual "map pred" (map (_ > 2) [1,2,3,4]) [False,False,True,True]
+  . testEqual "map pred" (map (> 2) [1,2,3,4]) [False,False,True,True]
   )
 
 -------------------------------------------------------------------------------
@@ -432,19 +431,6 @@ testQueue =
   )
 
 -------------------------------------------------------------------------------
--- Branching
-
-testBranching :: (Int, Int) -> (Int, Int)
-testBranching =
-  ( testEqual "branch true" (branch (_ > 0) (_ + 10) (_ + 20) 5) 15
-  . testEqual "branch false" (branch (_ > 0) (_ + 10) (_ + 20) 0) 20
-  . testEqual "branch boundary" (branch (_ > 0) (_ + 10) (_ + 20) 1) 11
-  . testEqual "branch str" (branch (_ == "yes") (const "Y") (const "N") "yes") "Y"
-  . testEqual "branch str no" (branch (_ == "yes") (const "Y") (const "N") "no") "N"
-  . testEqual "branch neg" (branch (_ > 0) (_ + 10) (_ + 20) (0 - 5)) 15
-  )
-
--------------------------------------------------------------------------------
 -- Lists (reverse, sort, filter)
 
 testLists :: (Int, Int) -> (Int, Int)
@@ -461,11 +447,11 @@ testLists =
   . testEqual "sort sorted" (sort [1,2,3]) [1,2,3]
   . testEqual "sort reversed" (sort [3,2,1]) [1,2,3]
   . testEqual "sort str" (sort ["c","a","b"]) ["a","b","c"]
-  . testEqual "filter keep" (filter (3 > _) [1,5,2,4,3]) [1,2]
-  . testEqual "filter keep 2" (filter (_ > 3) [1,5,2,4,3]) [5,4]
-  . testEqual "filter none" (filter (_ > 9) [1,5,2,4,3]) ([] :: [Int])
-  . testEqual "filter all" (filter (_ > 0) [1,2,3]) [1,2,3]
-  . testEqual "filter empty" (filter (_ > 0) ([] :: [Int])) ([] :: [Int])
+  . testEqual "filter keep" (filter (< 3) [1,5,2,4,3]) [1,2]
+  . testEqual "filter keep 2" (filter (>= 4) [1,5,2,4,3]) [5,4]
+  . testEqual "filter none" (filter (> 9) [1,5,2,4,3]) ([] :: [Int])
+  . testEqual "filter all" (filter (> 0) [1,2,3]) [1,2,3]
+  . testEqual "filter empty" (filter (> 0) ([] :: [Int])) ([] :: [Int])
   )
 
 -------------------------------------------------------------------------------
@@ -485,20 +471,20 @@ testListOps =
   . testEqual "replicate 1" (replicate 1 42) [42]
   . testEqual "replicate 0" (replicate 0 42) ([] :: [Int])
   . testEqual "replicate 5" (replicate 5 True) [True,True,True,True,True]
-  . testEqual "takeWhile" (takeWhile (_ < 3) [1,2,3,4,5]) [1,2]
-  . testEqual "takeWhile all" (takeWhile (_ < 10) [1,2,3]) [1,2,3]
-  . testEqual "takeWhile none" (takeWhile (_ < 0) [1,2,3]) ([] :: [Int])
-  . testEqual "takeWhile empty" (takeWhile (_ < 3) ([] :: [Int])) ([] :: [Int])
-  . testEqual "takeWhile first" (takeWhile (_ < 2) [1,2,3]) [1]
-  . testEqual "dropWhile" (dropWhile (_ < 3) [1,2,3,4,5]) [3,4,5]
-  . testEqual "dropWhile all" (dropWhile (_ < 10) [1,2,3]) ([] :: [Int])
-  . testEqual "dropWhile none" (dropWhile (_ < 0) [1,2,3]) [1,2,3]
-  . testEqual "dropWhile empty" (dropWhile (_ < 3) ([] :: [Int])) ([] :: [Int])
-  . testEqual "dropWhile first" (dropWhile (_ < 2) [1,2,3]) [2,3]
-  . testEqual "partition" (partition (_ > 3) [1,5,2,4,3]) ([5,4],[1,2,3])
-  . testEqual "partition all" (partition (_ > 0) [1,2,3]) ([1,2,3],([] :: [Int]))
-  . testEqual "partition none" (partition (_ > 9) [1,2,3]) (([] :: [Int]),[1,2,3])
-  . testEqual "partition empty" (partition (_ > 0) ([] :: [Int])) (([] :: [Int]),([] :: [Int]))
+  . testEqual "takeWhile" (takeWhile (< 3) [1,2,3,4,5]) [1,2]
+  . testEqual "takeWhile all" (takeWhile (< 10) [1,2,3]) [1,2,3]
+  . testEqual "takeWhile none" (takeWhile (< 0) [1,2,3]) ([] :: [Int])
+  . testEqual "takeWhile empty" (takeWhile (< 3) ([] :: [Int])) ([] :: [Int])
+  . testEqual "takeWhile first" (takeWhile (< 2) [1,2,3]) [1]
+  . testEqual "dropWhile" (dropWhile (< 3) [1,2,3,4,5]) [3,4,5]
+  . testEqual "dropWhile all" (dropWhile (< 10) [1,2,3]) ([] :: [Int])
+  . testEqual "dropWhile none" (dropWhile (< 0) [1,2,3]) [1,2,3]
+  . testEqual "dropWhile empty" (dropWhile (< 3) ([] :: [Int])) ([] :: [Int])
+  . testEqual "dropWhile first" (dropWhile (< 2) [1,2,3]) [2,3]
+  . testEqual "partition" (partition (> 3) [1,5,2,4,3]) ([5,4],[1,2,3])
+  . testEqual "partition all" (partition (> 0) [1,2,3]) ([1,2,3],([] :: [Int]))
+  . testEqual "partition none" (partition (> 9) [1,2,3]) (([] :: [Int]),[1,2,3])
+  . testEqual "partition empty" (partition (> 0) ([] :: [Int])) (([] :: [Int]),([] :: [Int]))
   . testEqual "scanl" (scanl (+) 0 [1,2,3]) [0,1,3,6]
   . testEqual "scanl empty" (scanl (+) 0 ([] :: [Int])) [0]
   . testEqual "scanl single" (scanl (+) 0 [5]) [0,5]
@@ -528,14 +514,14 @@ testListFunctions =
   . testEqual "zip" (zip [1,2,3] ["a","b","c"]) [(1,"a"),(2,"b"),(3,"c")]
   . testEqual "zip unequal" (zip [1,2] ["a","b","c"]) [(1,"a"),(2,"b")]
   . testEqual "zip empty" (zip ([] :: [Int]) ["a","b"]) ([] :: [(Int,Str)])
-  . testEqual "any true" (any (_ > 3) [1,2,4]) True
-  . testEqual "any false" (any (_ > 3) [1,2,3]) False
-  . testEqual "any empty" (any (_ > 0) ([] :: [Int])) False
-  . testEqual "any first" (any (_ > 0) [1]) True
-  . testEqual "all true" (all (_ > 0) [1,2,3]) True
-  . testEqual "all false" (all (_ > 0) [0,1,2]) False
-  . testEqual "all empty" (all (_ > 0) ([] :: [Int])) True
-  . testEqual "all single" (all (_ > 0) [1]) True
+  . testEqual "any true" (any (> 3) [1,2,4]) True
+  . testEqual "any false" (any (> 3) [1,2,3]) False
+  . testEqual "any empty" (any (> 0) ([] :: [Int])) False
+  . testEqual "any first" (any (> 0) [1]) True
+  . testEqual "all true" (all (> 0) [1,2,3]) True
+  . testEqual "all false" (all (> 0) [0,1,2]) False
+  . testEqual "all empty" (all (> 0) ([] :: [Int])) True
+  . testEqual "all single" (all (> 0) [1]) True
   . testEqual "elem found" (elem 2 [1,2,3]) True
   . testEqual "elem not found" (elem 4 [1,2,3]) False
   . testEqual "elem empty" (elem 1 ([] :: [Int])) False
@@ -549,7 +535,7 @@ testListFunctions =
   . testEqual "concat single" (concat [[1,2,3]]) [1,2,3]
   . testEqual "concatMap" (concatMap (\x -> [x, x * 2]) [1,2,3]) [1,2,2,4,3,6]
   . testEqual "concatMap empty" (concatMap (\x -> [x]) ([] :: [Int])) ([] :: [Int])
-  . testEqual "concatMap filter" (concatMap (\x -> filter (_ > 2) [x]) [1,2,3,4]) [3,4]
+  . testEqual "concatMap filter" (concatMap (\x -> filter (>= 3) [x]) [1,2,3,4]) [3,4]
   )
 
 -------------------------------------------------------------------------------
@@ -558,11 +544,11 @@ testListFunctions =
 testNewFunctions :: (Int, Int) -> (Int, Int)
 testNewFunctions =
   ( -- iterate
-    testEqual "iterate 5" (iterate 5 (_ + 1) 0) [0,1,2,3,4]
-  . testEqual "iterate 0" (iterate 0 (_ + 1) 0) ([] :: [Int])
-  . testEqual "iterate 1" (iterate 1 (_ + 1) 0) [0]
-  . testEqual "iterate double" (iterate 4 (_ * 2) 1) [1,2,4,8]
-  . testEqual "iterate str" (iterate 3 (_ <> "!") "hi") ["hi","hi!","hi!!"]
+    testEqual "iterate 5" (iterate 5 (+ 1) 0) [0,1,2,3,4]
+  . testEqual "iterate 0" (iterate 0 (+ 1) 0) ([] :: [Int])
+  . testEqual "iterate 1" (iterate 1 (+ 1) 0) [0]
+  . testEqual "iterate double" (iterate 4 (* 2) 1) [1,2,4,8]
+  . testEqual "iterate str" (iterate 3 (\x -> x <> "!") "hi") ["hi","hi!","hi!!"]
   -- groupBy
   . testEqual "groupBy eq" (groupBy (==) [1,1,2,2,2,3]) [[1,1],[2,2,2],[3]]
   . testEqual "groupBy empty" (groupBy (==) ([] :: [Int])) ([] :: [[Int]])
@@ -571,12 +557,12 @@ testNewFunctions =
   . testEqual "groupBy all diff" (groupBy (==) [1,2,3]) [[1],[2],[3]]
   . testEqual "groupBy pair" (groupBy (==) [1,1,2,2]) [[1,1],[2,2]]
   -- find
-  . testEqual "find found" (find (_ > 3) [1,2,4,5]) 4
-  . testEqual "find not found" (find (_ > 9) [1,2,3]) (Null :: ?Int)
-  . testEqual "find empty" (find (_ > 0) ([] :: [Int])) (Null :: ?Int)
-  . testEqual "find first" (find (_ > 0) [1,2,3]) 1
-  . testEqual "find last" (find (_ > 2) [1,2,3]) 3
-  . testEqual "find exact" (find (_ == 2) [1,2,3]) 2
+  . testEqual "find found" (find (> 3) [1,2,4,5]) 4
+  . testEqual "find not found" (find (> 9) [1,2,3]) (Null :: ?Int)
+  . testEqual "find empty" (find (> 0) ([] :: [Int])) (Null :: ?Int)
+  . testEqual "find first" (find (> 0) [1,2,3]) 1
+  . testEqual "find last" (find (> 2) [1,2,3]) 3
+  . testEqual "find exact" (find (== 2) [1,2,3]) 2
   -- unique
   . testEqual "unique" (unique [1,2,1,3,2,3]) [1,2,3]
   . testEqual "unique empty" (unique ([] :: [Int])) ([] :: [Int])
@@ -637,8 +623,8 @@ testDeque =
   . testEqual "deq safeFold1 empty" (safeFold1 (+) (toDeque ([] :: [Int]))) (Null :: ?Int)
   . testEqual "deq length" (length (toDeque [1,2,3])) 3
   -- Functor
-  . testEqual "deq map +1" (fold (+) 0 (map ((+) 1) (toDeque [1,2,3]))) 9
-  . testEqual "deq map *2" (fold (+) 0 (map (_ * 2) (toDeque [1,2,3]))) 12
+  . testEqual "deq map +1" (fold (+) 0 (map (+ 1) (toDeque [1,2,3]))) 9
+  . testEqual "deq map *2" (fold (+) 0 (map (* 2) (toDeque [1,2,3]))) 12
   -- Stack (cons/uncons)
   . testEqual "deq cons" (fold (+) 0 (cons 10 (toDeque [1,2,3]))) 16
   . testEqual "deq uncons head" (.0 (uncons (toDeque [10,20,30]))) 10
@@ -666,8 +652,8 @@ testArray =
   . testEqual "arr safeFold1 empty" (safeFold1 (+) (toArray ([] :: [Int]))) (Null :: ?Int)
   . testEqual "arr length" (length (toArray [1,2,3])) 3
   -- Functor
-  . testEqual "arr map +1" (fold (+) 0 (map ((+) 1) (toArray [1,2,3]))) 9
-  . testEqual "arr map *2" (fold (+) 0 (map (_ * 2) (toArray [1,2,3]))) 12
+  . testEqual "arr map +1" (fold (+) 0 (map (+ 1) (toArray [1,2,3]))) 9
+  . testEqual "arr map *2" (fold (+) 0 (map (* 2) (toArray [1,2,3]))) 12
   -- Indexed
   . testEqual "arr at 0" (at 0 (toArray [10,20,30])) 10
   . testEqual "arr at 1" (at 1 (toArray [10,20,30])) 20

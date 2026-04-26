@@ -2,98 +2,6 @@ module root (*)
 
 import internal
 
-
--- declaring these types here allow imports of types from roots
-
---' Unit / Null type with a single value
---' metavar: UNIT
-type Unit
-
---' Real with no specified width or precision
---' metavar: REAL
-type Real
-
---' 64-bit float
---' metavar: F64
-type Float64 = Real
-
---' 32-bit float
---' metavar: F32
-type Float32 = Real
-
---' Integer number with no specified width
---' metavar: INT
-type Int
-
---' 64 bit integer
---' metavar: INT64
-type Int64 = Int
-
---' 32 bit integer
---' metavar: INT32
-type Int32 = Int
-
---' 16 bit integer
---' metavar: INT16
-type Int16 = Int
-
---' 8 bit integer
---' metavar: INT8
-type Int8 = Int
-
---' 64 bit unsigned integer
---' metavar: UINT64
-type UInt64 = Int
-
---' 32 bit unsigned integer
---' metavar: UINT32
-type UInt32 = Int
-
---' 16 bit unsigned integer
---' metavar: UINT16
-type UInt16 = Int
-
---' 8 bit unsigned integer
---' metavar: UINT8
-type UInt8 = Int
-
---' String with no specified encoding (usually UTF-8)
---' metavar: STR
-type Str
-
---' True or false value
---' metavar: BOOL
-type Bool
-
---' A 2 element tuple
---' metavar: TUPLE2
-type Tuple2 a b
-
---' A 3 element tuple
---' metavar: TUPLE3
-type Tuple3 a b c
-
---' A 4 element tuple
---' metavar: TUPLE4
-type Tuple4 a b c d
-
---' A 5 element tuple
---' metavar: TUPLE5
-type Tuple5 a b c d e
-
---' A 6 element tuple
---' metavar: TUPLE6
-type Tuple6 a b c d e f
-
---' A 7 element tuple
---' metavar: TUPLE7
-type Tuple7 a b c d e f g
-
---' An 8 element tuple
---' metavar: TUPLE8
-type Tuple8 a b c d e f g h
-
-
 infixr 2 ||
 infixr 3 &&
 infixl 4 (<=)
@@ -110,7 +18,6 @@ infixl 7 (/)
 infixl 7 (//)
 infixl 7 (%)
 infixr 8 (**)
-
 
 class Ord a where
   (<=) :: a -> a -> Bool
@@ -234,21 +141,6 @@ instance Eq (Array a)
 instance Ord (Array a)
 instance Indexed Array
 
---' A Nat-dimensioned dense vector (n-element 1D dense array)
---' metavar: VECTOR
-type Vector (n :: Nat) a = [a]
-
---' A Nat-dimensioned dense matrix
---' metavar: MATRIX
-type Matrix (m :: Nat) (n :: Nat) a = [[a]]
-
--- Dense N-dimensional tensors (built-in types with row-major contiguous storage)
-type Tensor1 (d1 :: Nat) a
-type Tensor2 (d1 :: Nat) (d2 :: Nat) a
-type Tensor3 (d1 :: Nat) (d2 :: Nat) (d3 :: Nat) a
-type Tensor4 (d1 :: Nat) (d2 :: Nat) (d3 :: Nat) (d4 :: Nat) a
-type Tensor5 (d1 :: Nat) (d2 :: Nat) (d3 :: Nat) (d4 :: Nat) (d5 :: Nat) a
-
 ---------------------------------------------------------------------
 
 
@@ -320,11 +212,6 @@ min x y ? x < y = x
 max :: Ord => a -> a -> a
 max x y ? x < y = y
         : x
-
--- Control
---------------
-
-branch :: (a -> Bool) -> (a -> b) -> (a -> b) -> a -> b
 
 -- Foldable-derived operations
 -------------------------------
