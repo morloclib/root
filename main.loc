@@ -105,9 +105,6 @@ class Queue f where
   snoc :: f a -> a -> f a
   unsnoc :: f a -> (f a, a)
 
---' The default homo-list with language-specific properties
---' metavar: LIST
-type List a
 instance Semigroup (List a)
 instance Monoid (List a)
 instance Functor List
