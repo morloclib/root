@@ -575,17 +575,24 @@ testNewFunctions =
   . testEqual "groupSort empty" (groupSort ([] :: [(Int, Str)])) ([] :: [(Int, [Str])])
   . testEqual "groupSort single" (groupSort [(1,"x")]) [(1,["x"])]
   . testEqual "groupSort multi" (groupSort [(2,"b"),(1,"a"),(2,"c"),(1,"d")]) [(1,["a","d"]),(2,["b","c"])]
-  -- range
-  . testEqual "range 1 5" (range 1 5) [1,2,3,4,5]
-  . testEqual "range single" (range 3 3) [3]
-  . testEqual "range empty" (range 5 1) ([] :: [Int])
-  . testEqual "range 0 0" (range 0 0) [0]
-  . testEqual "range neg" (range (0 - 2) 2) [0 - 2, 0 - 1, 0, 1, 2]
-  -- rangeStep
-  . testEqual "rangeStep" (rangeStep 0 10 3) [0,3,6,9]
-  . testEqual "rangeStep 2" (rangeStep 1 5 2) [1,3,5]
-  . testEqual "rangeStep 1" (rangeStep 1 3 1) [1,2,3]
-  . testEqual "rangeStep exact" (rangeStep 0 6 3) [0,3,6]
+  -- range (half-open interval [a, b), like Python range and slice)
+  . testEqual "range 0 5 == slice" (range 0 5) (slice 0 5 [0,1,2,3,4,5,6,7])
+  . testEqual "range 0 5 == lit" (range 0 5) [0,1,2,3,4]
+  . testEqual "range 1 5" (range 1 5) [1,2,3,4]
+  . testEqual "range single empty" (range 3 3) ([] :: [Int])
+  . testEqual "range reversed" (range 5 1) ([] :: [Int])
+  . testEqual "range 0 0" (range 0 0) ([] :: [Int])
+  . testEqual "range 0 1" (range 0 1) [0]
+  . testEqual "range neg" (range (0 - 2) 2) [0 - 2, 0 - 1, 0, 1]
+  -- rangeStep (half-open interval [a, b), like Python range with step)
+  . testEqual "rangeStep 1 == range" (rangeStep 0 5 1) (range 0 5)
+  . testEqual "rangeStep 1 == slice" (rangeStep 0 5 1) (slice 0 5 [0,1,2,3,4,5,6,7])
+  . testEqual "rangeStep 1 == lit" (rangeStep 0 5 1) [0,1,2,3,4]
+  . testEqual "rangeStep 2" (rangeStep 0 10 2) [0,2,4,6,8]
+  . testEqual "rangeStep 3" (rangeStep 0 10 3) [0,3,6,9]
+  . testEqual "rangeStep stop excl" (rangeStep 1 5 2) [1,3]
+  . testEqual "rangeStep exact excl" (rangeStep 0 6 3) [0,3]
+  . testEqual "rangeStep empty" (rangeStep 5 1 1) ([] :: [Int])
   )
 
 -------------------------------------------------------------------------------

@@ -272,8 +272,16 @@ zip = zipWith (\a b -> (a, b))
 
 unzip :: [(a, b)] -> ([a], [b])
 
+-- Integers in the half-open interval [a, b), matching Python's range and
+-- root's slice:
+--   range 0 5 == [0,1,2,3,4]
+--   range 3 3 == []
+--   range 5 1 == []
 range :: Int -> Int -> [Int]
 
+-- Integers from a, stepping by step, while strictly less than b:
+--   rangeStep 0 10 2 == [0,2,4,6,8]
+--   rangeStep 0 6 3  == [0,3]
 rangeStep :: Int -> Int -> Int -> [Int]
 
 -- Sequence conversions
