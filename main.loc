@@ -86,19 +86,6 @@ class Readable a where
 
 ---- Sequence definitions -------------------------------------------
 
-class Indexed f where
-  -- at 0  [1,2,3] == 1
-  -- at 2  [1,2,3] == 3
-  at :: Int -> f a -> a
-
-  -- slice 0 0 [1,2,3] == []
-  -- slice 0 1 [1,2,3] == [1]
-  -- slice 1 0 [1,2,3] == []    -- this doesn't reverse
-  -- slice 1 3 [1,2,3] == [2,3]
-  -- slice 1 4 [1,2,3] == [2,3] -- length may not equal j - i
-  -- slice 3 4 [1,2,3] == []
-  slice :: Int -> Int -> f a -> f a
-
 class Stack f where
   cons :: a -> f a -> f a
   uncons :: f a -> (a, f a)
@@ -113,13 +100,14 @@ instance Functor List
 instance Foldable List
 instance Eq (List a)
 instance Ord (List a)
-instance Indexed List
+instance Indexable List
+instance Sliceable List
 instance Stack List
 instance Queue List
 
 --' A list with O(n) random access and O(1) start/end access
 --' metavar: LIST
-type Deque a = List a
+newtype Deque a = List a
 instance Semigroup (Deque a)
 instance Monoid (Deque a)
 instance Functor Deque
@@ -129,16 +117,9 @@ instance Ord (Deque a)
 instance Stack Deque
 instance Queue Deque
 
---' A vector of set size
---' metavar: LIST
-type Array a = List a
-instance Semigroup (Array a)
-instance Monoid (Array a)
-instance Functor Array
-instance Foldable Array
-instance Eq (Array a)
-instance Ord (Array a)
-instance Indexed Array
+-- this instance is needed for building Deque types from list literals
+-- it also provides pack/unpack functions for Deque/List explicit conversions
+instance Packable (List a) (Deque a)
 
 ---------------------------------------------------------------------
 
@@ -285,7 +266,3 @@ range :: Int -> Int -> [Int]
 --   rangeStep 0 10 2 == [0,2,4,6,8]
 --   rangeStep 0 6 3  == [0,3]
 rangeStep :: Int -> Int -> Int -> [Int]
-
--- Sequence conversions
-toDeque :: [a] -> Deque a
-toArray :: [a] -> Array a

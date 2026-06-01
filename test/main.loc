@@ -42,7 +42,6 @@ runTests :: (Int, Int) -> Bool
 runTests =
   ( passed
   . printResult
-  . testGroup "Array" testArray
   . testGroup "Deque" testDeque
   . testGroup "Readable" testReadable
   . testGroup "New Functions" testNewFunctions
@@ -372,24 +371,33 @@ testFunctor =
 
 testIndexed :: (Int, Int) -> (Int, Int)
 testIndexed =
-  ( testEqual "at 0" (at 0 [2,3,4]) 2
-  . testEqual "at 1" (at 1 [2,3,4]) 3
-  . testEqual "at 2" (at 2 [2,3,4]) 4
-  . testEqual "at 0 str" (at 0 ["a","b","c"]) "a"
-  . testEqual "at 0 single" (at 0 [42]) 42
-  . testEqual "slice 0 0" (slice 0 0 [1,2,3]) []
-  . testEqual "slice 0 1" (slice 0 1 [1,2,3]) [1]
-  . testEqual "slice 0 2" (slice 0 2 [1,2,3]) [1,2]
-  . testEqual "slice 0 3" (slice 0 3 [1,2,3]) [1,2,3]
-  . testEqual "slice 1 0" (slice 1 0 [1,2,3]) []
-  . testEqual "slice 1 3" (slice 1 3 [1,2,3]) [2,3]
-  . testEqual "slice 1 4" (slice 1 4 [1,2,3]) [2,3]
-  . testEqual "slice 3 4" (slice 3 4 [1,2,3]) []
-  . testEqual "slice 2 3" (slice 2 3 [1,2,3]) [3]
+  ( testEqual ".[0] [2,3,4]" (.[0] [2,3,4]) 2
+  . testEqual ".[1] [2,3,4]" (.[1] [2,3,4]) 3
+  . testEqual ".[2] [2,3,4]" (.[2] [2,3,4]) 4
+  . testEqual ".[0] str" (.[0] ["a","b","c"]) "a"
+  . testEqual ".[0] single" (.[0] [42]) 42
+  -- Bracket-accessor surface for index and slice.
+  . testEqual ".[0] xs" (.[0] [10,20,30]) 10
+  . testEqual ".[1] xs" (.[1] [10,20,30]) 20
+  . testEqual ".[1:3] xs" (.[1:3] [10,20,30,40]) [20,30]
+  . testEqual ".[:2] xs" (.[:2] [10,20,30,40]) [10,20]
+  . testEqual ".[1:] xs" (.[1:] [10,20,30,40]) [20,30,40]
+  . testEqual ".[::-1] xs" (.[::-1] [1,2,3,4]) [4,3,2,1]
+  . testEqual ".[::2] xs" (.[::2] [1,2,3,4,5]) [1,3,5]
+  -- Closed-bound slices (Python-style half-open intervals).
+  . testEqual ".[0:0]"      (.[0:0] [1,2,3]) []
+  . testEqual ".[0:1]"      (.[0:1] [1,2,3]) [1]
+  . testEqual ".[0:2]"      (.[0:2] [1,2,3]) [1,2]
+  . testEqual ".[0:3]"      (.[0:3] [1,2,3]) [1,2,3]
+  . testEqual ".[1:0]"      (.[1:0] [1,2,3]) []
+  . testEqual ".[1:3]"      (.[1:3] [1,2,3]) [2,3]
+  . testEqual ".[1:4]"      (.[1:4] [1,2,3]) [2,3]
+  . testEqual ".[3:4]"      (.[3:4] [1,2,3]) []
+  . testEqual ".[2:3]"      (.[2:3] [1,2,3]) [3]
   -- Full slice
-  . testEqual "slice full" (slice 0 3 [10,20,30]) [10,20,30]
+  . testEqual ".[0:3] full" (.[0:3] [10,20,30]) [10,20,30]
   -- slice on strings
-  . testEqual "slice str" (slice 1 3 ["a","b","c","d"]) ["b","c"]
+  . testEqual ".[1:3] str"  (.[1:3] ["a","b","c","d"]) ["b","c"]
   )
 
 -------------------------------------------------------------------------------
@@ -576,7 +584,7 @@ testNewFunctions =
   . testEqual "groupSort single" (groupSort [(1,"x")]) [(1,["x"])]
   . testEqual "groupSort multi" (groupSort [(2,"b"),(1,"a"),(2,"c"),(1,"d")]) [(1,["a","d"]),(2,["b","c"])]
   -- range (half-open interval [a, b), like Python range and slice)
-  . testEqual "range 0 5 == slice" (range 0 5) (slice 0 5 [0,1,2,3,4,5,6,7])
+  . testEqual "range 0 5 == slice" (range 0 5) (.[0:5] [0,1,2,3,4,5,6,7])
   . testEqual "range 0 5 == lit" (range 0 5) [0,1,2,3,4]
   . testEqual "range 1 5" (range 1 5) [1,2,3,4]
   . testEqual "range single empty" (range 3 3) ([] :: [Int])
@@ -586,7 +594,7 @@ testNewFunctions =
   . testEqual "range neg" (range (0 - 2) 2) [0 - 2, 0 - 1, 0, 1]
   -- rangeStep (half-open interval [a, b), like Python range with step)
   . testEqual "rangeStep 1 == range" (rangeStep 0 5 1) (range 0 5)
-  . testEqual "rangeStep 1 == slice" (rangeStep 0 5 1) (slice 0 5 [0,1,2,3,4,5,6,7])
+  . testEqual "rangeStep 1 == slice" (rangeStep 0 5 1) (.[0:5] [0,1,2,3,4,5,6,7])
   . testEqual "rangeStep 1 == lit" (rangeStep 0 5 1) [0,1,2,3,4]
   . testEqual "rangeStep 2" (rangeStep 0 10 2) [0,2,4,6,8]
   . testEqual "rangeStep 3" (rangeStep 0 10 3) [0,3,6,9]
@@ -620,53 +628,26 @@ testReadable =
 
 testDeque :: (Int, Int) -> (Int, Int)
 testDeque =
-  ( -- Construction via toDeque
-    testEqual "deq toDeque" (fold (+) 0 (toDeque [1,2,3])) 6
+  ( -- Construction from a list literal via Packable (List a) (Deque a)
+    testEqual "deq from list literal" (fold (+) 0 ([1,2,3] :: Deque a)) 6
   -- Foldable
-  . testEqual "deq fold sum" (fold (+) 0 (toDeque [1,2,3])) 6
-  . testEqual "deq fold empty" (fold (+) 0 (toDeque ([] :: [Int]))) 0
-  . testEqual "deq fold1" (fold1 (+) (toDeque [1,2,3])) 6
-  . testEqual "deq safeFold1" (safeFold1 (+) (toDeque [1,2,3])) 6
-  . testEqual "deq safeFold1 empty" (safeFold1 (+) (toDeque ([] :: [Int]))) (Null :: ?Int)
-  . testEqual "deq length" (length (toDeque [1,2,3])) 3
+  . testEqual "deq fold sum" (fold (+) 0 ([1,2,3] :: Deque a)) 6
+  . testEqual "deq fold empty" (fold (+) 0 ([] :: Deque a)) 0
+  . testEqual "deq fold1" (fold1 (+) ([1,2,3] :: Deque a)) 6
+  . testEqual "deq safeFold1" (safeFold1 (+) ([1,2,3] :: Deque a)) 6
+  . testEqual "deq safeFold1 empty" (safeFold1 (+) ([] :: Deque a)) (Null :: ?Int)
+  . testEqual "deq length" (length ([1,2,3] :: Deque a)) 3
   -- Functor
-  . testEqual "deq map +1" (fold (+) 0 (map (+ 1) (toDeque [1,2,3]))) 9
-  . testEqual "deq map *2" (fold (+) 0 (map (* 2) (toDeque [1,2,3]))) 12
+  . testEqual "deq map +1" (fold (+) 0 (map (+ 1) ([1,2,3] :: Deque a))) 9
+  . testEqual "deq map *2" (fold (+) 0 (map (* 2) ([1,2,3] :: Deque a))) 12
   -- Stack (cons/uncons)
-  . testEqual "deq cons" (fold (+) 0 (cons 10 (toDeque [1,2,3]))) 16
-  . testEqual "deq uncons head" (.0 (uncons (toDeque [10,20,30]))) 10
-  . testEqual "deq uncons tail" (fold (+) 0 (.1 (uncons (toDeque [10,20,30])))) 50
+  . testEqual "deq cons" (fold (+) 0 (cons 10 ([1,2,3] :: Deque a))) 16
+  . testEqual "deq uncons head" (.0 (uncons ([10,20,30] :: Deque a))) 10
+  . testEqual "deq uncons tail" (fold (+) 0 (.1 (uncons ([10,20,30] :: Deque a)))) 50
   -- Queue (snoc/unsnoc)
-  . testEqual "deq snoc" (fold (+) 0 (snoc (toDeque [1,2,3]) 10)) 16
-  . testEqual "deq unsnoc last" (.1 (unsnoc (toDeque [10,20,30]))) 30
-  . testEqual "deq unsnoc init" (fold (+) 0 (.0 (unsnoc (toDeque [10,20,30])))) 30
+  . testEqual "deq snoc" (fold (+) 0 (snoc ([1,2,3] :: Deque a) 10)) 16
+  . testEqual "deq unsnoc last" (.1 (unsnoc ([10,20,30] :: Deque a))) 30
+  . testEqual "deq unsnoc init" (fold (+) 0 (.0 (unsnoc ([10,20,30] :: Deque a)))) 30
   -- Semigroup
-  . testEqual "deq <>" (fold (+) 0 ((toDeque [1,2]) <> (toDeque [3,4]))) 10
-  )
-
--------------------------------------------------------------------------------
--- Array (Foldable, Functor, Indexed, Semigroup)
-
-testArray :: (Int, Int) -> (Int, Int)
-testArray =
-  ( -- Construction via toArray
-    testEqual "arr toArray" (fold (+) 0 (toArray [1,2,3])) 6
-  -- Foldable
-  . testEqual "arr fold sum" (fold (+) 0 (toArray [1,2,3])) 6
-  . testEqual "arr fold empty" (fold (+) 0 (toArray ([] :: [Int]))) 0
-  . testEqual "arr fold1" (fold1 (+) (toArray [1,2,3])) 6
-  . testEqual "arr safeFold1" (safeFold1 (+) (toArray [1,2,3])) 6
-  . testEqual "arr safeFold1 empty" (safeFold1 (+) (toArray ([] :: [Int]))) (Null :: ?Int)
-  . testEqual "arr length" (length (toArray [1,2,3])) 3
-  -- Functor
-  . testEqual "arr map +1" (fold (+) 0 (map (+ 1) (toArray [1,2,3]))) 9
-  . testEqual "arr map *2" (fold (+) 0 (map (* 2) (toArray [1,2,3]))) 12
-  -- Indexed
-  . testEqual "arr at 0" (at 0 (toArray [10,20,30])) 10
-  . testEqual "arr at 1" (at 1 (toArray [10,20,30])) 20
-  . testEqual "arr at 2" (at 2 (toArray [10,20,30])) 30
-  . testEqual "arr slice" (fold (+) 0 (slice 1 3 (toArray [10,20,30]))) 50
-  . testEqual "arr slice empty" (fold (+) 0 (slice 0 0 (toArray [10,20,30]))) 0
-  -- Semigroup
-  -- -- Array is NOT a semigroup, fixed size
+  . testEqual "deq <>" (fold (+) 0 (([1,2] :: Deque a) <> ([3,4] :: Deque a))) 10
   )
