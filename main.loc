@@ -13,6 +13,7 @@ infixl 4 (>=)
 infixl 4 (==)
 infixl 4 (!=)
 infixr 6 (<>)
+infixr 5 (++)
 infixl 6 (+)
 infixl 6 (-)
 infixl 7 (*)
@@ -44,6 +45,14 @@ class Semigroup a where
 
 class Semigroup a => Monoid a where
   mempty :: a
+
+-- Semigroup for Nat-parameterized containers
+class SemigroupDim f where
+  (++) :: f m a -> f n a -> f (m+n) a
+
+-- Monoid for Nat-parameterized containers
+class SemigroupDim f => MonoidDim f where
+  empty0 :: f 0 a
 
 class Integral a where
   zero :: a
