@@ -13,11 +13,16 @@ type Py => List a = "list" a
 -------------------------------------------------------------------------------
 -- Test suite functions
 
-source Py from "root-test.py" ("testEqual", "printMsg", "printResult")
+source Py from "root-test.py" ("testEqual", "testTrue", "printMsg", "printResult")
 testEqual
     :: Str -- description of the test
     -> a
     -> a
+    -> (Int, Int) -- total number of tests and total fails
+    -> (Int, Int)
+testTrue
+    :: Str -- description of the test
+    -> Bool
     -> (Int, Int) -- total number of tests and total fails
     -> (Int, Int)
 printMsg :: Str -> a -> a
@@ -371,33 +376,33 @@ testFunctor =
 
 testIndexed :: (Int, Int) -> (Int, Int)
 testIndexed =
-  ( testEqual ".[0] [2,3,4]" (.[0] [2,3,4]) 2
-  . testEqual ".[1] [2,3,4]" (.[1] [2,3,4]) 3
-  . testEqual ".[2] [2,3,4]" (.[2] [2,3,4]) 4
-  . testEqual ".[0] str" (.[0] ["a","b","c"]) "a"
-  . testEqual ".[0] single" (.[0] [42]) 42
+  ( testTrue ".[0] [2,3,4]" ((.[0] [2,3,4]) == 2)
+  . testTrue ".[1] [2,3,4]" ((.[1] [2,3,4]) == 3)
+  . testTrue ".[2] [2,3,4]" ((.[2] [2,3,4]) == 4)
+  . testTrue ".[0] str" ((.[0] ["a","b","c"]) == "a")
+  . testTrue ".[0] single" ((.[0] [42]) == 42)
   -- Bracket-accessor surface for index and slice.
-  . testEqual ".[0] xs" (.[0] [10,20,30]) 10
-  . testEqual ".[1] xs" (.[1] [10,20,30]) 20
-  . testEqual ".[1:3] xs" (.[1:3] [10,20,30,40]) [20,30]
-  . testEqual ".[:2] xs" (.[:2] [10,20,30,40]) [10,20]
-  . testEqual ".[1:] xs" (.[1:] [10,20,30,40]) [20,30,40]
-  . testEqual ".[::-1] xs" (.[::-1] [1,2,3,4]) [4,3,2,1]
-  . testEqual ".[::2] xs" (.[::2] [1,2,3,4,5]) [1,3,5]
+  . testTrue ".[0] xs" ((.[0] [10,20,30]) == 10)
+  . testTrue ".[1] xs" ((.[1] [10,20,30]) == 20)
+  . testTrue ".[1:3] xs" ((.[1:3] [10,20,30,40]) == [20,30])
+  . testTrue ".[:2] xs" ((.[:2] [10,20,30,40]) == [10,20])
+  . testTrue ".[1:] xs" ((.[1:] [10,20,30,40]) == [20,30,40])
+  . testTrue ".[::-1] xs" ((.[::-1] [1,2,3,4]) == [4,3,2,1])
+  . testTrue ".[::2] xs" ((.[::2] [1,2,3,4,5]) == [1,3,5])
   -- Closed-bound slices (Python-style half-open intervals).
-  . testEqual ".[0:0]"      (.[0:0] [1,2,3]) []
-  . testEqual ".[0:1]"      (.[0:1] [1,2,3]) [1]
-  . testEqual ".[0:2]"      (.[0:2] [1,2,3]) [1,2]
-  . testEqual ".[0:3]"      (.[0:3] [1,2,3]) [1,2,3]
-  . testEqual ".[1:0]"      (.[1:0] [1,2,3]) []
-  . testEqual ".[1:3]"      (.[1:3] [1,2,3]) [2,3]
-  . testEqual ".[1:4]"      (.[1:4] [1,2,3]) [2,3]
-  . testEqual ".[3:4]"      (.[3:4] [1,2,3]) []
-  . testEqual ".[2:3]"      (.[2:3] [1,2,3]) [3]
+  . testTrue ".[0:0]"      ((.[0:0] [1,2,3]) == [])
+  . testTrue ".[0:1]"      ((.[0:1] [1,2,3]) == [1])
+  . testTrue ".[0:2]"      ((.[0:2] [1,2,3]) == [1,2])
+  . testTrue ".[0:3]"      ((.[0:3] [1,2,3]) == [1,2,3])
+  . testTrue ".[1:0]"      ((.[1:0] [1,2,3]) == [])
+  . testTrue ".[1:3]"      ((.[1:3] [1,2,3]) == [2,3])
+  . testTrue ".[1:4]"      ((.[1:4] [1,2,3]) == [2,3])
+  . testTrue ".[3:4]"      ((.[3:4] [1,2,3]) == [])
+  . testTrue ".[2:3]"      ((.[2:3] [1,2,3]) == [3])
   -- Full slice
-  . testEqual ".[0:3] full" (.[0:3] [10,20,30]) [10,20,30]
+  . testTrue ".[0:3] full" ((.[0:3] [10,20,30]) == [10,20,30])
   -- slice on strings
-  . testEqual ".[1:3] str"  (.[1:3] ["a","b","c","d"]) ["b","c"]
+  . testTrue ".[1:3] str"  ((.[1:3] ["a","b","c","d"]) == ["b","c"])
   )
 
 -------------------------------------------------------------------------------
@@ -439,16 +444,11 @@ testQueue =
   )
 
 -------------------------------------------------------------------------------
--- Lists (reverse, sort, filter)
+-- Lists (sort, filter)
 
 testLists :: (Int, Int) -> (Int, Int)
 testLists =
-  ( testEqual "reverse []"      (reverse ([] :: [Int])) ([] :: [Int])
-  . testEqual "reverse [2]"     (reverse [2]) [2]
-  . testEqual "reverse [1,2,3]" (reverse [1,2,3]) [3,2,1]
-  . testEqual "reverse str" (reverse ["a","b","c"]) ["c","b","a"]
-  . testEqual "reverse reverse" (reverse (reverse [1,2,3])) [1,2,3]
-  . testEqual "sort []" (sort ([] :: [Int])) ([] :: [Int])
+  ( testEqual "sort []" (sort ([] :: [Int])) ([] :: [Int])
   . testEqual "sort [2]" (sort [2]) [2]
   . testEqual "sort [2,1,3]" (sort [2,1,3]) [1,2,3]
   . testEqual "sort [2,1,2,3]" (sort [2,1,2,3]) [1,2,2,3]
@@ -584,7 +584,7 @@ testNewFunctions =
   . testEqual "groupSort single" (groupSort [(1,"x")]) [(1,["x"])]
   . testEqual "groupSort multi" (groupSort [(2,"b"),(1,"a"),(2,"c"),(1,"d")]) [(1,["a","d"]),(2,["b","c"])]
   -- range (half-open interval [a, b), like Python range and slice)
-  . testEqual "range 0 5 == slice" (range 0 5) (.[0:5] [0,1,2,3,4,5,6,7])
+  . testTrue "range 0 5 == slice" ((range 0 5) == (.[0:5] [0,1,2,3,4,5,6,7]))
   . testEqual "range 0 5 == lit" (range 0 5) [0,1,2,3,4]
   . testEqual "range 1 5" (range 1 5) [1,2,3,4]
   . testEqual "range single empty" (range 3 3) ([] :: [Int])
@@ -594,7 +594,7 @@ testNewFunctions =
   . testEqual "range neg" (range (0 - 2) 2) [0 - 2, 0 - 1, 0, 1]
   -- rangeStep (half-open interval [a, b), like Python range with step)
   . testEqual "rangeStep 1 == range" (rangeStep 0 5 1) (range 0 5)
-  . testEqual "rangeStep 1 == slice" (rangeStep 0 5 1) (.[0:5] [0,1,2,3,4,5,6,7])
+  . testTrue "rangeStep 1 == slice" ((rangeStep 0 5 1) == (.[0:5] [0,1,2,3,4,5,6,7]))
   . testEqual "rangeStep 1 == lit" (rangeStep 0 5 1) [0,1,2,3,4]
   . testEqual "rangeStep 2" (rangeStep 0 10 2) [0,2,4,6,8]
   . testEqual "rangeStep 3" (rangeStep 0 10 3) [0,3,6,9]

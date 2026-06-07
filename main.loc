@@ -232,7 +232,6 @@ sort :: Ord a => [a] -> [a]
 groupSort :: Ord a => [(a, b)] -> [(a, [b])]
 
 sortBy :: (a -> a -> Bool) -> [a] -> [a]
-reverse :: [a] -> [a]
 filter :: (a -> Bool) -> [a] -> [a]
 takeWhile :: (a -> Bool) -> [a] -> [a]
 dropWhile :: (a -> Bool) -> [a] -> [a]
