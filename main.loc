@@ -2,8 +2,6 @@ module root (*)
 
 import internal
 
-effect IO
-
 infixr 2 ||
 infixr 3 &&
 infixl 4 (<=)
