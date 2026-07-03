@@ -91,6 +91,8 @@ class Show a where
 class Readable a where
   read :: Str -> ?a
 
+instance Sizeable Str
+
 ---- Sequence definitions -------------------------------------------
 
 class Stack f where
@@ -105,6 +107,7 @@ instance Semigroup (List a)
 instance Monoid (List a)
 instance Functor List
 instance Foldable List
+instance Sizeable (List a)
 instance Eq (List a)
 instance Ord (List a)
 instance Indexable List
