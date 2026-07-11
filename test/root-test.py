@@ -30,6 +30,24 @@ def testTrue(msg, x, results):
         print(f"  {msg} ... {bad('FAIL')}")
         return (nfails + 1, ntests + 1)
 
+def testEqualMaybe(msg, x, y, results):
+    (nfails, ntests) = results
+    if x is not None and x == y:
+        print(f"  {msg} ... {good('PASS')}")
+        return (nfails, ntests + 1)
+    else:
+        print(f"  {msg} ... {bad('FAIL')}")
+        return (nfails + 1, ntests + 1)
+
+def testIsNothing(msg, x, results):
+    (nfails, ntests) = results
+    if x is None:
+        print(f"  {msg} ... {good('PASS')}")
+        return (nfails, ntests + 1)
+    else:
+        print(f"  {msg} ... {bad('FAIL')}")
+        return (nfails + 1, ntests + 1)
+
 def printMsg(msg, x):
     print(info(msg))
     return x

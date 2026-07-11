@@ -131,6 +131,31 @@ instance Queue Deque
 -- it also provides pack/unpack functions for Deque/List explicit conversions
 instance Packable (List a) (Deque a)
 
+-- numerics
+--             Float32 --> Float64
+--            /          /
+--       UInt8 --> UInt16 --> UInt32 --> UInt64
+--      /      \          \         \
+--  Bool        \          \    Int  \
+--      \        \          \  /      \
+--       Int8 -->  Int16 -->  Int32 -->  Int64
+--                      \           \
+--                       Float32 --> Float64
+--                              \
+--                               Real
+class TotalInto a b where
+  into :: a -> b
+
+class PartialInto a b where
+  tryInto :: a -> ?b
+
+-- lossy conversions to real
+class RealLike a where
+  toReal :: a -> Real
+
+instance TotalInto a a where
+  into x = x
+
 ---------------------------------------------------------------------
 
 
