@@ -2,16 +2,16 @@ module root.test (test)
 
 import root
 
-type Py => UInt8 = "int"
-type Py => UInt16 = "int"
-type Py => UInt32 = "int"
-type Py => UInt64 = "int"
-type Py => Int8 = "int"
-type Py => Int16 = "int"
-type Py => Int32 = "int"
-type Py => Int64 = "int"
-type Py => Float32 = "float"
-type Py => Float64 = "float"
+type Py => U8 = "int"
+type Py => U16 = "int"
+type Py => U32 = "int"
+type Py => U64 = "int"
+type Py => I8 = "int"
+type Py => I16 = "int"
+type Py => I32 = "int"
+type Py => I64 = "int"
+type Py => F32 = "float"
+type Py => F64 = "float"
 
 type Py => Int = "int"
 type Py => Str = "str"
@@ -311,35 +311,35 @@ testNumeric =
 testTotalInto :: (Int, Int) -> (Int, Int)
 testTotalInto =
   ( -- Signed widening
-    testEqual "into Int8 -> Int16"  (into (5   :: Int8)  :: Int16) 5
-  . testEqual "into Int8 -> Int32"  (into (-42 :: Int8)  :: Int32) (-42)
-  . testEqual "into Int16 -> Int64" (into (1000 :: Int16) :: Int64) 1000
-  . testEqual "into Int32 -> Int64" (into (100000 :: Int32) :: Int64) 100000
+    testEqual "into I8 -> I16"  (into (5   :: I8)  :: I16) 5
+  . testEqual "into I8 -> I32"  (into (-42 :: I8)  :: I32) (-42)
+  . testEqual "into I16 -> I64" (into (1000 :: I16) :: I64) 1000
+  . testEqual "into I32 -> I64" (into (100000 :: I32) :: I64) 100000
     -- Unsigned widening
-  . testEqual "into UInt8 -> UInt16" (into (200 :: UInt8) :: UInt16) 200
-  . testEqual "into UInt16 -> UInt32" (into (60000 :: UInt16) :: UInt32) 60000
-  . testEqual "into UInt32 -> UInt64" (into (3000000000 :: UInt32) :: UInt64) 3000000000
+  . testEqual "into U8 -> U16" (into (200 :: U8) :: U16) 200
+  . testEqual "into U16 -> U32" (into (60000 :: U16) :: U32) 60000
+  . testEqual "into U32 -> U64" (into (3000000000 :: U32) :: U64) 3000000000
     -- Unsigned to strictly-wider signed
-  . testEqual "into UInt8 -> Int16"  (into (200 :: UInt8) :: Int16) 200
-  . testEqual "into UInt16 -> Int32" (into (60000 :: UInt16) :: Int32) 60000
-  . testEqual "into UInt32 -> Int64" (into (3000000000 :: UInt32) :: Int64) 3000000000
-    -- Fixed-width to Int (guaranteed >= Int32)
-  . testEqual "into Int8 -> Int"    (into (-100 :: Int8) :: Int) (-100)
-  . testEqual "into UInt16 -> Int"  (into (60000 :: UInt16) :: Int) 60000
+  . testEqual "into U8 -> I16"  (into (200 :: U8) :: I16) 200
+  . testEqual "into U16 -> I32" (into (60000 :: U16) :: I32) 60000
+  . testEqual "into U32 -> I64" (into (3000000000 :: U32) :: I64) 3000000000
+    -- Fixed-width to Int (guaranteed >= I32)
+  . testEqual "into I8 -> Int"    (into (-100 :: I8) :: Int) (-100)
+  . testEqual "into U16 -> Int"  (into (60000 :: U16) :: Int) 60000
     -- Lossless int -> float
-  . testEqual "into Int16 -> Float32" (into (300 :: Int16) :: Float32) 300.0
-  . testEqual "into Int32 -> Float64" (into (100000 :: Int32) :: Float64) 100000.0
-  . testEqual "into UInt16 -> Float32" (into (1000 :: UInt16) :: Float32) 1000.0
-  . testEqual "into UInt32 -> Float64" (into (3000000000 :: UInt32) :: Float64) 3000000000.0
+  . testEqual "into I16 -> F32" (into (300 :: I16) :: F32) 300.0
+  . testEqual "into I32 -> F64" (into (100000 :: I32) :: F64) 100000.0
+  . testEqual "into U16 -> F32" (into (1000 :: U16) :: F32) 1000.0
+  . testEqual "into U32 -> F64" (into (3000000000 :: U32) :: F64) 3000000000.0
     -- Float widening
-  . testEqual "into Float32 -> Float64" (into (2.5 :: Float32) :: Float64) 2.5
-    -- Real <-> Float64 (identity representation in every backend)
-  . testEqual "into Real -> Float64" (into (3.14 :: Real) :: Float64) 3.14
-  . testEqual "into Float64 -> Real" (into (3.14 :: Float64) :: Real) 3.14
+  . testEqual "into F32 -> F64" (into (2.5 :: F32) :: F64) 2.5
+    -- Real <-> F64 (identity representation in every backend)
+  . testEqual "into Real -> F64" (into (3.14 :: Real) :: F64) 3.14
+  . testEqual "into F64 -> Real" (into (3.14 :: F64) :: Real) 3.14
     -- Reflexive blanket
-  . testEqual "into Int32 -> Int32 (blanket)" (into (42 :: Int32) :: Int32) 42
+  . testEqual "into I32 -> I32 (blanket)" (into (42 :: I32) :: I32) 42
     -- Composition with other operations
-  . testEqual "sum of widened" (sum [into (1 :: Int8) :: Int64, 2, 3]) 6
+  . testEqual "sum of widened" (sum [into (1 :: I8) :: I64, 2, 3]) 6
   )
 
 -------------------------------------------------------------------------------
@@ -348,35 +348,35 @@ testTotalInto =
 testPartialInto :: (Int, Int) -> (Int, Int)
 testPartialInto =
   ( -- Signed narrowing: in-range succeeds, out-of-range returns Null
-    testEqualMaybe "tryInto Int32 -> Int8 ok"   (tryInto (5    :: Int32) :: ?Int8) (5 :: Int8)
-  . testIsNothing  "tryInto Int32 -> Int8 high" (tryInto (200  :: Int32) :: ?Int8)
-  . testIsNothing  "tryInto Int32 -> Int8 low"  (tryInto (-200 :: Int32) :: ?Int8)
-  . testEqualMaybe "tryInto Int64 -> Int32 ok"  (tryInto (1000000 :: Int64) :: ?Int32) (1000000 :: Int32)
+    testEqualMaybe "tryInto I32 -> I8 ok"   (tryInto (5    :: I32) :: ?I8) (5 :: I8)
+  . testIsNothing  "tryInto I32 -> I8 high" (tryInto (200  :: I32) :: ?I8)
+  . testIsNothing  "tryInto I32 -> I8 low"  (tryInto (-200 :: I32) :: ?I8)
+  . testEqualMaybe "tryInto I64 -> I32 ok"  (tryInto (1000000 :: I64) :: ?I32) (1000000 :: I32)
     -- Unsigned narrowing
-  . testEqualMaybe "tryInto UInt32 -> UInt8 ok"   (tryInto (100 :: UInt32) :: ?UInt8) (100 :: UInt8)
-  . testIsNothing  "tryInto UInt32 -> UInt8 over" (tryInto (500 :: UInt32) :: ?UInt8)
+  . testEqualMaybe "tryInto U32 -> U8 ok"   (tryInto (100 :: U32) :: ?U8) (100 :: U8)
+  . testIsNothing  "tryInto U32 -> U8 over" (tryInto (500 :: U32) :: ?U8)
     -- Signed -> unsigned: fails on negatives
-  . testEqualMaybe "tryInto Int32 -> UInt8 ok"  (tryInto (100 :: Int32) :: ?UInt8) (100 :: UInt8)
-  . testIsNothing  "tryInto Int32 -> UInt8 neg" (tryInto (-1  :: Int32) :: ?UInt8)
-  . testEqualMaybe "tryInto Int8 -> UInt64 ok"  (tryInto (42 :: Int8)  :: ?UInt64) (42 :: UInt64)
-  . testIsNothing  "tryInto Int8 -> UInt64 neg" (tryInto (-1 :: Int8)  :: ?UInt64)
+  . testEqualMaybe "tryInto I32 -> U8 ok"  (tryInto (100 :: I32) :: ?U8) (100 :: U8)
+  . testIsNothing  "tryInto I32 -> U8 neg" (tryInto (-1  :: I32) :: ?U8)
+  . testEqualMaybe "tryInto I8 -> U64 ok"  (tryInto (42 :: I8)  :: ?U64) (42 :: U64)
+  . testIsNothing  "tryInto I8 -> U64 neg" (tryInto (-1 :: I8)  :: ?U64)
     -- Unsigned -> narrower signed
-  . testEqualMaybe "tryInto UInt8 -> Int8 ok"   (tryInto (100 :: UInt8) :: ?Int8) (100 :: Int8)
-  . testIsNothing  "tryInto UInt8 -> Int8 over" (tryInto (200 :: UInt8) :: ?Int8)
+  . testEqualMaybe "tryInto U8 -> I8 ok"   (tryInto (100 :: U8) :: ?I8) (100 :: I8)
+  . testIsNothing  "tryInto U8 -> I8 over" (tryInto (200 :: U8) :: ?I8)
     -- Float -> Int: integer-valued in range succeeds
-  . testEqualMaybe "tryInto Real -> Int32 ok"  (tryInto (42.0  :: Real) :: ?Int32) (42  :: Int32)
-  . testEqualMaybe "tryInto Real -> Int32 neg" (tryInto (-42.0 :: Real) :: ?Int32) (-42 :: Int32)
+  . testEqualMaybe "tryInto Real -> I32 ok"  (tryInto (42.0  :: Real) :: ?I32) (42  :: I32)
+  . testEqualMaybe "tryInto Real -> I32 neg" (tryInto (-42.0 :: Real) :: ?I32) (-42 :: I32)
     -- Float -> Int: non-integer fails
-  . testIsNothing  "tryInto Real -> Int32 frac" (tryInto (3.5 :: Real) :: ?Int32)
+  . testIsNothing  "tryInto Real -> I32 frac" (tryInto (3.5 :: Real) :: ?I32)
     -- Int -> fixed-width: Python edge case where Int may exceed
-  . testEqualMaybe "tryInto Int -> Int8 ok"    (tryInto (100 :: Int) :: ?Int8)  (100 :: Int8)
-  . testIsNothing  "tryInto Int -> UInt8 neg"  (tryInto (-1  :: Int) :: ?UInt8)
+  . testEqualMaybe "tryInto Int -> I8 ok"    (tryInto (100 :: Int) :: ?I8)  (100 :: I8)
+  . testIsNothing  "tryInto Int -> U8 neg"  (tryInto (-1  :: Int) :: ?U8)
   )
 
 -------------------------------------------------------------------------------
 -- RealLike
 
--- The canonical use case for toReal: size returns UInt64, but division to
+-- The canonical use case for toReal: size returns U64, but division to
 -- produce a floating-point mean requires a Real. toReal bridges the two.
 mean :: [Real] -> Real
 mean xs = sum xs / toReal (size xs)
@@ -384,19 +384,19 @@ mean xs = sum xs / toReal (size xs)
 testRealLike :: (Int, Int) -> (Int, Int)
 testRealLike =
   ( -- toReal from every numeric source: values chosen to round-trip
-    -- exactly through Float64 so testEqual's `==` is safe.
+    -- exactly through F64 so testEqual's `==` is safe.
     testEqual "toReal Real"    (toReal (2.5 :: Real))    2.5
-  . testEqual "toReal Float64" (toReal (1.25 :: Float64)) 1.25
-  . testEqual "toReal Float32" (toReal (0.5 :: Float32))  0.5
+  . testEqual "toReal F64" (toReal (1.25 :: F64)) 1.25
+  . testEqual "toReal F32" (toReal (0.5 :: F32))  0.5
   . testEqual "toReal Int"     (toReal (42 :: Int))       42.0
-  . testEqual "toReal Int8"    (toReal (7 :: Int8))       7.0
-  . testEqual "toReal Int16"   (toReal (300 :: Int16))    300.0
-  . testEqual "toReal Int32"   (toReal (100000 :: Int32)) 100000.0
-  . testEqual "toReal Int64"   (toReal (5 :: Int64))      5.0
-  . testEqual "toReal UInt8"   (toReal (255 :: UInt8))    255.0
-  . testEqual "toReal UInt16"  (toReal (1000 :: UInt16))  1000.0
-  . testEqual "toReal UInt32"  (toReal (70000 :: UInt32)) 70000.0
-  . testEqual "toReal UInt64"  (toReal (9 :: UInt64))     9.0
+  . testEqual "toReal I8"    (toReal (7 :: I8))       7.0
+  . testEqual "toReal I16"   (toReal (300 :: I16))    300.0
+  . testEqual "toReal I32"   (toReal (100000 :: I32)) 100000.0
+  . testEqual "toReal I64"   (toReal (5 :: I64))      5.0
+  . testEqual "toReal U8"   (toReal (255 :: U8))    255.0
+  . testEqual "toReal U16"  (toReal (1000 :: U16))  1000.0
+  . testEqual "toReal U32"  (toReal (70000 :: U32)) 70000.0
+  . testEqual "toReal U64"  (toReal (9 :: U64))     9.0
   . testEqual "toReal size" (toReal (size [10, 20, 30])) 3.0
   . testEqual "toReal empty size" (toReal (size ([] :: [Int]))) 0.0
   . testEqual "mean singleton"     (mean [7.0])                7.0

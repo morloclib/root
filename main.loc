@@ -132,15 +132,15 @@ instance Queue Deque
 instance Packable (List a) (Deque a)
 
 -- numerics
---             Float32 --> Float64
+--             F32 --> F64
 --            /          /
---       UInt8 --> UInt16 --> UInt32 --> UInt64
+--       U8 --> U16 --> U32 --> U64
 --      /      \          \         \
 --  Bool        \          \    Int  \
 --      \        \          \  /      \
---       Int8 -->  Int16 -->  Int32 -->  Int64
+--       I8 -->  I16 -->  I32 -->  I64
 --                      \           \
---                       Float32 --> Float64
+--                       F32 --> F64
 --                              \
 --                               Real
 class TotalInto a b where
