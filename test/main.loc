@@ -24,7 +24,7 @@ type Py => List a = "list" a
 -------------------------------------------------------------------------------
 -- Test suite functions
 
-source Py from "root-test.py" ("testEqual", "testTrue", "testEqualMaybe", "testIsNothing", "printMsg", "printResult")
+source Py from "root-test.py" ("testEqual", "testTrue", "printMsg", "printResult")
 testEqual
     :: Str -- description of the test
     -> a
@@ -35,19 +35,6 @@ testTrue
     :: Str -- description of the test
     -> Bool
     -> (Int, Int) -- total number of tests and total fails
-    -> (Int, Int)
--- LHS is ?a, RHS is a: passes when LHS is Some(v) and v == RHS.
-testEqualMaybe
-    :: Str
-    -> ?a
-    -> a
-    -> (Int, Int)
-    -> (Int, Int)
--- LHS is ?a: passes when LHS is Null.
-testIsNothing
-    :: Str
-    -> ?a
-    -> (Int, Int)
     -> (Int, Int)
 printMsg :: Str -> a -> a
 printResult :: (Int, Int) -> (Int, Int)
@@ -348,29 +335,29 @@ testTotalInto =
 testPartialInto :: (Int, Int) -> (Int, Int)
 testPartialInto =
   ( -- Signed narrowing: in-range succeeds, out-of-range returns Null
-    testEqualMaybe "tryInto I32 -> I8 ok"   (tryInto (5    :: I32) :: ?I8) (5 :: I8)
-  . testIsNothing  "tryInto I32 -> I8 high" (tryInto (200  :: I32) :: ?I8)
-  . testIsNothing  "tryInto I32 -> I8 low"  (tryInto (-200 :: I32) :: ?I8)
-  . testEqualMaybe "tryInto I64 -> I32 ok"  (tryInto (1000000 :: I64) :: ?I32) (1000000 :: I32)
+    testEqual "tryInto I32 -> I8 ok"   (@catch (tryInto (5 :: I32) :: <Err> I8) 0) (5 :: I8)
+  . testEqual  "tryInto I32 -> I8 high" (@catch (tryInto (200  :: I32) :: <Err> I8) (-1 :: I8)) (-1 :: I8)
+  . testEqual  "tryInto I32 -> I8 low"  (@catch (tryInto (-200 :: I32) :: <Err> I8) (-1 :: I8)) (-1 :: I8)
+  . testEqual "tryInto I64 -> I32 ok"  (@catch (tryInto (1000000 :: I64) :: <Err> I32) -1) (1000000 :: I32)
     -- Unsigned narrowing
-  . testEqualMaybe "tryInto U32 -> U8 ok"   (tryInto (100 :: U32) :: ?U8) (100 :: U8)
-  . testIsNothing  "tryInto U32 -> U8 over" (tryInto (500 :: U32) :: ?U8)
+  . testEqual "tryInto U32 -> U8 ok"   (@catch (tryInto (100 :: U32) :: <Err> U8) (-1 :: U8)) (100 :: U8)
+  . testEqual  "tryInto U32 -> U8 over" (@catch (tryInto (500 :: U32) :: <Err> U8) (-1 :: U8)) (-1 :: U8)
     -- Signed -> unsigned: fails on negatives
-  . testEqualMaybe "tryInto I32 -> U8 ok"  (tryInto (100 :: I32) :: ?U8) (100 :: U8)
-  . testIsNothing  "tryInto I32 -> U8 neg" (tryInto (-1  :: I32) :: ?U8)
-  . testEqualMaybe "tryInto I8 -> U64 ok"  (tryInto (42 :: I8)  :: ?U64) (42 :: U64)
-  . testIsNothing  "tryInto I8 -> U64 neg" (tryInto (-1 :: I8)  :: ?U64)
+  . testEqual "tryInto I32 -> U8 ok"  (@catch (tryInto (100 :: I32) :: <Err> U8) (-1 :: U8)) (100 :: U8)
+  . testEqual  "tryInto I32 -> U8 neg" (@catch (tryInto (-1  :: I32) :: <Err> U8) (99 :: U8)) (99 :: U8)
+  . testEqual "tryInto I8 -> U64 ok"  (@catch (tryInto (42 :: I8)  :: <Err> U64) (99 :: U64)) (42 :: U64)
+  . testEqual  "tryInto I8 -> U64 neg" (@catch (tryInto (-1 :: I8)  :: <Err> U64) (99 :: U64)) (99 :: U64)
     -- Unsigned -> narrower signed
-  . testEqualMaybe "tryInto U8 -> I8 ok"   (tryInto (100 :: U8) :: ?I8) (100 :: I8)
-  . testIsNothing  "tryInto U8 -> I8 over" (tryInto (200 :: U8) :: ?I8)
+  . testEqual "tryInto U8 -> I8 ok"   (@catch (tryInto (100 :: U8) :: <Err> I8) (-1 :: I8)) (100 :: I8)
+  . testEqual  "tryInto U8 -> I8 over" (@catch (tryInto (200 :: U8) :: <Err> I8) (-1 :: I8)) (-1 :: I8)
     -- Float -> Int: integer-valued in range succeeds
-  . testEqualMaybe "tryInto Real -> I32 ok"  (tryInto (42.0  :: Real) :: ?I32) (42  :: I32)
-  . testEqualMaybe "tryInto Real -> I32 neg" (tryInto (-42.0 :: Real) :: ?I32) (-42 :: I32)
+  . testEqual "tryInto Real -> I32 ok"  (@catch (tryInto (42.0  :: Real) :: <Err> I32) (-1 :: I32)) (42  :: I32)
+  . testEqual "tryInto Real -> I32 neg" (@catch (tryInto (-42.0 :: Real) :: <Err> I32) (99 :: I32)) (-42 :: I32)
     -- Float -> Int: non-integer fails
-  . testIsNothing  "tryInto Real -> I32 frac" (tryInto (3.5 :: Real) :: ?I32)
+  . testEqual  "tryInto Real -> I32 frac" (@catch (tryInto (3.5 :: Real) :: <Err> I32) (-1 :: I32)) (-1 :: I32)
     -- Int -> fixed-width: Python edge case where Int may exceed
-  . testEqualMaybe "tryInto Int -> I8 ok"    (tryInto (100 :: Int) :: ?I8)  (100 :: I8)
-  . testIsNothing  "tryInto Int -> U8 neg"  (tryInto (-1  :: Int) :: ?U8)
+  . testEqual "tryInto Int -> I8 ok"    (@catch (tryInto (100 :: Int) :: <Err> I8) (-1 :: I8))  (100 :: I8)
+  . testEqual "tryInto Int -> U8 neg"  (@catch (tryInto (-1  :: Int) :: <Err> U8) (99 :: U8)) (99 :: U8)
   )
 
 -------------------------------------------------------------------------------
@@ -447,7 +434,7 @@ testShow =
   . testEqual "show bool T" (show True) "true"
   . testEqual "show bool F" (show False) "false"
   -- show str round-trip (avoids embedded quotes in expected value)
-  . testEqual "show str rt" (read (show "hello") :: ?Str) "hello"
+  . testEqual "show str rt" (@catch (read (show "hello")) "FAIL") "hello"
   )
 
 -------------------------------------------------------------------------------
@@ -735,19 +722,17 @@ testNewFunctions =
 
 testReadable :: (Int, Int) -> (Int, Int)
 testReadable =
-  ( testEqual "read int" (read "42" :: ?Int) 42
-  . testEqual "read int neg" (read "-7" :: ?Int) (0 - 7)
-  . testEqual "read int zero" (read "0" :: ?Int) 0
-  . testEqual "read int bad" (read "abc" :: ?Int) (Null :: ?Int)
-  . testEqual "read real" (read "3.14" :: ?Real) 3.14
-  . testEqual "read real int" (read "42" :: ?Real) 42.0
-  . testEqual "read real neg" (read "-2.5" :: ?Real) (0.0 - 2.5)
-  . testEqual "read real bad" (read "xyz" :: ?Real) (Null :: ?Real)
-  -- read of JSON strings (e.g., read "\"hello\"") is omitted:
-  -- escaped quotes in string literals trigger a codegen edge case
-  . testEqual "read bool true" (read "true" :: ?Bool) True
-  . testEqual "read bool false" (read "false" :: ?Bool) False
-  . testEqual "read bool bad" (read "yes" :: ?Bool) (Null :: ?Bool)
+  ( testEqual "read int" (@catch (read "42") -1) 42
+  . testEqual "read int neg" (@catch (read "-7") -1) -7
+  . testEqual "read int zero" (@catch (read "0") -1) 0
+  . testEqual "read int bad" (@catch (read "abc") -1) -1 -- intended failure
+  . testEqual "read real" (@catch (read "3.14") -1) 3.14
+  . testEqual "read real int" (@catch (read "42") -1) 42.0
+  . testEqual "read real neg" (@catch (read "-2.5") -1) -2.5
+  . testEqual "read real bad" (@catch (read "xyz") -1) -1
+  . testEqual "read bool true" (@catch (read "true") False) True
+  . testEqual "read bool false" (@catch (read "false") True) False
+  . testEqual "read bool bad" (@catch (read "yes") False) False
   )
 
 -------------------------------------------------------------------------------

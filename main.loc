@@ -89,7 +89,7 @@ class Show a where
   show :: a -> Str
 
 class Readable a where
-  read :: Str -> ?a
+  read :: Str -> <Err> a
 
 instance Sizeable Str
 
@@ -132,22 +132,22 @@ instance Queue Deque
 instance Packable (List a) (Deque a)
 
 -- numerics
---             F32 --> F64
+--             F32 -----> F64
 --            /          /
 --       U8 --> U16 --> U32 --> U64
 --      /      \          \         \
 --  Bool        \          \    Int  \
 --      \        \          \  /      \
---       I8 -->  I16 -->  I32 -->  I64
---                      \           \
---                       F32 --> F64
---                              \
---                               Real
+--       I8 -->  I16 -----> I32 ----> I64
+--                   \        \
+--                    F32 --> F64
+--                       \
+--                        Real
 class TotalInto a b where
   into :: a -> b
 
 class PartialInto a b where
-  tryInto :: a -> ?b
+  tryInto :: a -> <Err> b
 
 -- lossy conversions to real
 class RealLike a where
