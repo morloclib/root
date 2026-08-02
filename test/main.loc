@@ -335,10 +335,10 @@ testTotalInto =
 testPartialInto :: (Int, Int) -> (Int, Int)
 testPartialInto =
   ( -- Signed narrowing: in-range succeeds, out-of-range returns Null
-    testEqual "tryInto I32 -> I8 ok"   (@catch (tryInto (5 :: I32) :: <Err> I8) 0) (5 :: I8)
+    testEqual "tryInto I32 -> I8 ok"   (@catch (tryInto (5 :: I32) :: <Err> I8) (0 :: I8)) (5 :: I8)
   . testEqual  "tryInto I32 -> I8 high" (@catch (tryInto (200  :: I32) :: <Err> I8) (-1 :: I8)) (-1 :: I8)
   . testEqual  "tryInto I32 -> I8 low"  (@catch (tryInto (-200 :: I32) :: <Err> I8) (-1 :: I8)) (-1 :: I8)
-  . testEqual "tryInto I64 -> I32 ok"  (@catch (tryInto (1000000 :: I64) :: <Err> I32) -1) (1000000 :: I32)
+  . testEqual "tryInto I64 -> I32 ok"  (@catch (tryInto (1000000 :: I64) :: <Err> I32) (-1 :: I32)) (1000000 :: I32)
     -- Unsigned narrowing
   . testEqual "tryInto U32 -> U8 ok"   (@catch (tryInto (100 :: U32) :: <Err> U8) (-1 :: U8)) (100 :: U8)
   . testEqual  "tryInto U32 -> U8 over" (@catch (tryInto (500 :: U32) :: <Err> U8) (-1 :: U8)) (-1 :: U8)
@@ -726,10 +726,10 @@ testReadable =
   . testEqual "read int neg" (@catch (read "-7") -1) -7
   . testEqual "read int zero" (@catch (read "0") -1) 0
   . testEqual "read int bad" (@catch (read "abc") -1) -1 -- intended failure
-  . testEqual "read real" (@catch (read "3.14") -1) 3.14
-  . testEqual "read real int" (@catch (read "42") -1) 42.0
-  . testEqual "read real neg" (@catch (read "-2.5") -1) -2.5
-  . testEqual "read real bad" (@catch (read "xyz") -1) -1
+  . testEqual "read real" (@catch (read "3.14") -1.0) 3.14
+  . testEqual "read real int" (@catch (read "42") -1.0) 42.0
+  . testEqual "read real neg" (@catch (read "-2.5") -1.0) -2.5
+  . testEqual "read real bad" (@catch (read "xyz") -1.0) -1.0
   . testEqual "read bool true" (@catch (read "true") False) True
   . testEqual "read bool false" (@catch (read "false") True) False
   . testEqual "read bool bad" (@catch (read "yes") False) False
