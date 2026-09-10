@@ -89,7 +89,9 @@ class Show a where
   show :: a -> Str
 
 class Readable a where
-  read :: Str -> <Err> a
+  -- Parsing touches nothing, so with failure carried in the result this is
+  -- pure and composes in `map`.
+  read :: Str -> Try Str a
 
 instance Sizeable Str
 
@@ -147,7 +149,10 @@ class TotalInto a b where
   into :: a -> b
 
 class PartialInto a b where
-  tryInto :: a -> <Err> b
+  -- Every instance is a sourced conversion that raises when the value does
+  -- not fit, so the failure is a native throw rather than data. Wrap the
+  -- call in `@try` to get it as a `Try`.
+  tryInto :: a -> b
 
 -- lossy conversions to real
 class RealLike a where
