@@ -569,6 +569,12 @@ testLists =
   . testEqual "sort sorted" (sort [1,2,3]) [1,2,3]
   . testEqual "sort reversed" (sort [3,2,1]) [1,2,3]
   . testEqual "sort str" (sort ["c","a","b"]) ["a","b","c"]
+  -- Real is orderable in morloc, so sort must accept it. Rust's f64 is
+  -- PartialOrd but not Ord, so a backend that reaches for the language's
+  -- total-order trait fails to compile here.
+  . testEqual "sort real" (sort [2.5, 0.5, 1.5]) [0.5, 1.5, 2.5]
+  . testEqual "sort real dups" (sort [1.5, 0.5, 1.5]) [0.5, 1.5, 1.5]
+  . testEqual "sort real neg" (sort [1.0, -2.0, 0.0]) [-2.0, 0.0, 1.0]
   . testEqual "filter keep" (filter (< 3) [1,5,2,4,3]) [1,2]
   . testEqual "filter keep 2" (filter (>= 4) [1,5,2,4,3]) [5,4]
   . testEqual "filter none" (filter (> 9) [1,5,2,4,3]) ([] :: [Int])
@@ -697,6 +703,9 @@ testNewFunctions =
   . testEqual "groupSort empty" (groupSort ([] :: [(Int, Str)])) ([] :: [(Int, [Str])])
   . testEqual "groupSort single" (groupSort [(1,"x")]) [(1,["x"])]
   . testEqual "groupSort multi" (groupSort [(2,"b"),(1,"a"),(2,"c"),(1,"d")]) [(1,["a","d"]),(2,["b","c"])]
+  -- Real keys, with equal keys separated by another key: the grouping must
+  -- merge non-adjacent occurrences, not just runs.
+  . testEqual "groupSort real" (groupSort [(1.5,"a"),(0.5,"b"),(1.5,"c")]) [(0.5,["b"]),(1.5,["a","c"])]
   -- range (half-open interval [a, b), like Python range and slice)
   . testTrue "range 0 5 == slice" ((range 0 5) == (.[0:5] [0,1,2,3,4,5,6,7]))
   . testEqual "range 0 5 == lit" (range 0 5) [0,1,2,3,4]
