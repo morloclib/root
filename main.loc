@@ -23,13 +23,13 @@ infixr 8 (**)
 class Ord a where
   (<=) :: a -> a -> Bool
 
-(<) :: Ord => a -> a -> Bool
+(<) :: Ord a => a -> a -> Bool
 (<) x y = x <= y && not (y <= x)
 
-(>) :: Ord => a -> a -> Bool
+(>) :: Ord a => a -> a -> Bool
 (>) x y = y <= x && not (x <= y)
 
-(>=) :: Ord => a -> a -> Bool
+(>=) :: Ord a => a -> a -> Bool
 (>=) x y = y <= x
 
 class Eq a where
@@ -225,11 +225,11 @@ toFst f x = (f x, x)
 -- Ord
 --------------
 
-min :: Ord => a -> a -> a
+min :: Ord a => a -> a -> a
 min x y ? x < y = x
         : y
 
-max :: Ord => a -> a -> a
+max :: Ord a => a -> a -> a
 max x y ? x < y = y
         : x
 
@@ -245,13 +245,13 @@ any f = fold (\b a -> b || f a) False
 all :: Foldable f => (a -> Bool) -> f a -> Bool
 all f = fold (\b a -> b && f a) True
 
-elem :: Foldable f => a -> f a -> Bool
+elem :: (Foldable f, Eq a) => a -> f a -> Bool
 elem x = any ((==) x)
 
-concat :: (Foldable f, Monoid a) => f (f a) -> f a
+concat :: (Foldable f, Monoid (f a)) => f (f a) -> f a
 concat = fold (<>) mempty
 
-concatMap :: (Foldable f, Functor f) => (a -> f b) -> f a -> f b
+concatMap :: (Foldable f, Functor f, Monoid (f b)) => (a -> f b) -> f a -> f b
 concatMap f xs = concat (map f xs)
 
 sum :: (Foldable f, Integral a) => f a -> a
