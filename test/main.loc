@@ -1,91 +1,43 @@
 module root.test (test)
 
 import root
+import unittest
 
-type Py => U8 = "int"
-type Py => U16 = "int"
-type Py => U32 = "int"
-type Py => U64 = "int"
-type Py => I8 = "int"
-type Py => I16 = "int"
-type Py => I32 = "int"
-type Py => I64 = "int"
-type Py => F32 = "float"
-type Py => F64 = "float"
-
-type Py => Int = "int"
-type Py => Str = "str"
-type Py => Real = "float"
-type Py => Bool = "bool"
-type Py => Tuple2 a b = "tuple" a b
-type Py => Tuple3 a b c = "tuple" a b c
-type Py => List a = "list" a
-
--------------------------------------------------------------------------------
--- Test suite functions
-
-source Py from "root-test.py" ("testEqual", "testTrue", "printMsg", "printResult")
-testEqual
-    :: Str -- description of the test
-    -> a
-    -> a
-    -> (Int, Int) -- total number of tests and total fails
-    -> (Int, Int)
-testTrue
-    :: Str -- description of the test
-    -> Bool
-    -> (Int, Int) -- total number of tests and total fails
-    -> (Int, Int)
-printMsg :: Str -> a -> a
-printResult :: (Int, Int) -> (Int, Int)
-
-testGroup
-    :: Str
-    -> ((Int, Int) -> (Int, Int))
-    -> (Int, Int)
-    -> (Int, Int)
-testGroup msg tests = tests . printMsg msg
-
-passed :: (Int, Int) -> Bool
-passed t = 0 == (.0 t)
-
-test = runTests (0,0)
+test = suite runTests
 
 -------------------------------------------------------------------------------
 -- Test suite
 
-runTests :: (Int, Int) -> Bool
+runTests :: Test
 runTests =
-  ( passed
-  . printResult
-  . testGroup "Deque" testDeque
-  . testGroup "Readable" testReadable
-  . testGroup "New Functions" testNewFunctions
-  . testGroup "List Functions" testListFunctions
-  . testGroup "List Ops" testListOps
-  . testGroup "Lists" testLists
-  . testGroup "Queue" testQueue
-  . testGroup "Stack" testStack
-  . testGroup "Indexed" testIndexed
-  . testGroup "Functor" testFunctor
-  . testGroup "Fold" testFold
-  . testGroup "Show" testShow
-  . testGroup "Monoid" testMonoid
-  . testGroup "PartialInto" testPartialInto
-  . testGroup "TotalInto" testTotalInto
-  . testGroup "RealLike" testRealLike
-  . testGroup "Numeric" testNumeric
-  . testGroup "Integral" testIntegral
-  . testGroup "Comparisons" testComparisons
-  . testGroup "Bools" testBools
-  . testGroup "Tuples" testTuples
-  . testGroup "Combinators" testCombinators
+  ( group "Deque" testDeque
+  . group "Readable" testReadable
+  . group "New Functions" testNewFunctions
+  . group "List Functions" testListFunctions
+  . group "List Ops" testListOps
+  . group "Lists" testLists
+  . group "Queue" testQueue
+  . group "Stack" testStack
+  . group "Indexed" testIndexed
+  . group "Functor" testFunctor
+  . group "Fold" testFold
+  . group "Show" testShow
+  . group "Monoid" testMonoid
+  . group "PartialInto" testPartialInto
+  . group "TotalInto" testTotalInto
+  . group "RealLike" testRealLike
+  . group "Numeric" testNumeric
+  . group "Integral" testIntegral
+  . group "Comparisons" testComparisons
+  . group "Bools" testBools
+  . group "Tuples" testTuples
+  . group "Combinators" testCombinators
   )
 
 -------------------------------------------------------------------------------
 -- Combinators
 
-testCombinators :: (Int, Int) -> (Int, Int)
+testCombinators :: Test
 testCombinators =
   ( testEqual "id int" (id 1) 1
   . testEqual "id str" (id "hello") "hello"
@@ -113,7 +65,7 @@ testCombinators =
 -------------------------------------------------------------------------------
 -- Tuples
 
-testTuples :: (Int, Int) -> (Int, Int)
+testTuples :: Test
 testTuples =
   ( testEqual "fst" (.0 (1,2)) 1
   . testEqual "snd" (.1 (1,2)) 2
@@ -148,7 +100,7 @@ testTuples =
 -------------------------------------------------------------------------------
 -- Booleans
 
-testBools :: (Int, Int) -> (Int, Int)
+testBools :: Test
 testBools =
   ( testEqual "not True" (not True) False
   . testEqual "not False" (not False) True
@@ -179,7 +131,7 @@ testBools =
 -------------------------------------------------------------------------------
 -- Comparisons
 
-testComparisons :: (Int, Int) -> (Int, Int)
+testComparisons :: Test
 testComparisons =
   ( testEqual "le 1 2" (1 <= 2) True
   . testEqual "le 1 1" (1 <= 1) True
@@ -230,7 +182,7 @@ testComparisons =
 -------------------------------------------------------------------------------
 -- Integral
 
-testIntegral :: (Int, Int) -> (Int, Int)
+testIntegral :: Test
 testIntegral =
   ( testEqual "zero Int" (zero :: Int) 0
   . testEqual "zero Real" (zero :: Real) 0.0
@@ -279,7 +231,7 @@ testIntegral =
 -------------------------------------------------------------------------------
 -- Numeric (Real)
 
-testNumeric :: (Int, Int) -> (Int, Int)
+testNumeric :: Test
 testNumeric =
   ( testEqual "1.0 / 2.0" (1.0 / 2.0) 0.5
   . testEqual "6.0 / 3.0" (6.0 / 3.0) 2.0
@@ -305,7 +257,7 @@ testNumeric =
 -------------------------------------------------------------------------------
 -- TotalInto: lossless total conversions
 
-testTotalInto :: (Int, Int) -> (Int, Int)
+testTotalInto :: Test
 testTotalInto =
   ( -- Signed widening
     testEqual "into I8 -> I16"  (into (5   :: I8)  :: I16) 5
@@ -342,7 +294,7 @@ testTotalInto =
 -------------------------------------------------------------------------------
 -- PartialInto: bounds-checked conversions
 
-testPartialInto :: (Int, Int) -> (Int, Int)
+testPartialInto :: Test
 testPartialInto =
   ( -- Signed narrowing: in-range succeeds, out-of-range returns Null
     testEqual "tryInto I32 -> I8 ok"   (match (@try (tryInto (5 :: I32) :: I8)) | (Ok _cv) = _cv | (Err _) = (0 :: I8)) (5 :: I8)
@@ -378,7 +330,7 @@ testPartialInto =
 mean :: [Real] -> Real
 mean xs = sum xs / toReal (size xs)
 
-testRealLike :: (Int, Int) -> (Int, Int)
+testRealLike :: Test
 testRealLike =
   ( -- toReal from every numeric source: values chosen to round-trip
     -- exactly through F64 so testEqual's `==` is safe.
@@ -405,7 +357,7 @@ testRealLike =
 -------------------------------------------------------------------------------
 -- Monoid / Semigroup
 
-testMonoid :: (Int, Int) -> (Int, Int)
+testMonoid :: Test
 testMonoid =
   ( -- Str semigroup
     testEqual "str <>" ("hello" <> " world") "hello world"
@@ -434,7 +386,7 @@ testMonoid =
 -------------------------------------------------------------------------------
 -- Show
 
-testShow :: (Int, Int) -> (Int, Int)
+testShow :: Test
 testShow =
   ( testEqual "show int" (show 42) "42"
   . testEqual "show zero" (show 0) "0"
@@ -450,7 +402,7 @@ testShow =
 -------------------------------------------------------------------------------
 -- Foldable
 
-testFold :: (Int, Int) -> (Int, Int)
+testFold :: Test
 testFold =
   ( testEqual "fold sum" (fold (+) 0 [1,2,3]) 6
   . testEqual "fold sum empty" (fold (+) 0 ([] :: [Int])) 0
@@ -479,7 +431,7 @@ testFold =
 -------------------------------------------------------------------------------
 -- Functor
 
-testFunctor :: (Int, Int) -> (Int, Int)
+testFunctor :: Test
 testFunctor =
   ( testEqual "map +1" (map ((+) 1) [1,2,3]) [2,3,4]
   . testEqual "map empty" (map ((+) 1) ([] :: [Int])) ([] :: [Int])
@@ -498,7 +450,7 @@ testFunctor =
 -------------------------------------------------------------------------------
 -- Indexed
 
-testIndexed :: (Int, Int) -> (Int, Int)
+testIndexed :: Test
 testIndexed =
   ( testTrue ".[0] [2,3,4]" ((.[0] [2,3,4]) == 2)
   . testTrue ".[1] [2,3,4]" ((.[1] [2,3,4]) == 3)
@@ -532,7 +484,7 @@ testIndexed =
 -------------------------------------------------------------------------------
 -- Stack
 
-testStack :: (Int, Int) -> (Int, Int)
+testStack :: Test
 testStack =
   ( testEqual "cons" (cons 1 [2,3]) [1,2,3]
   . testEqual "cons empty" (cons 1 ([] :: [Int])) [1]
@@ -551,7 +503,7 @@ testStack =
 -------------------------------------------------------------------------------
 -- Queue
 
-testQueue :: (Int, Int) -> (Int, Int)
+testQueue :: Test
 testQueue =
   ( testEqual "snoc" (snoc [1,2] 3) [1,2,3]
   . testEqual "snoc empty" (snoc ([] :: [Int]) 1) [1]
@@ -570,7 +522,7 @@ testQueue =
 -------------------------------------------------------------------------------
 -- Lists (sort, filter)
 
-testLists :: (Int, Int) -> (Int, Int)
+testLists :: Test
 testLists =
   ( testEqual "sort []" (sort ([] :: [Int])) ([] :: [Int])
   . testEqual "sort [2]" (sort [2]) [2]
@@ -595,7 +547,7 @@ testLists =
 -------------------------------------------------------------------------------
 -- List Ops (sortBy, unzip, replicate, takeWhile, dropWhile, etc.)
 
-testListOps :: (Int, Int) -> (Int, Int)
+testListOps :: Test
 testListOps =
   ( testEqual "sortBy desc" (sortBy (\x y -> x > y) [1,3,2]) [3,2,1]
   . testEqual "sortBy asc" (sortBy (\x y -> x < y) [3,1,2]) [1,2,3]
@@ -642,7 +594,7 @@ testListOps =
 -------------------------------------------------------------------------------
 -- List Functions (zipWith, zip, any, all, elem, concat, concatMap)
 
-testListFunctions :: (Int, Int) -> (Int, Int)
+testListFunctions :: Test
 testListFunctions =
   ( testEqual "zipWith add" (zipWith (+) [1,2,3] [4,5,6]) [5,7,9]
   . testEqual "zipWith shorter left" (zipWith (+) [1,2] [4,5,6]) [5,7]
@@ -679,7 +631,7 @@ testListFunctions =
 -------------------------------------------------------------------------------
 -- New Functions (iterate, groupBy, find, unique, groupSort, range, rangeStep)
 
-testNewFunctions :: (Int, Int) -> (Int, Int)
+testNewFunctions :: Test
 testNewFunctions =
   ( -- iterate
     testEqual "iterate 5" (iterate 5 (+ 1) 0) [0,1,2,3,4]
@@ -739,7 +691,7 @@ testNewFunctions =
 -------------------------------------------------------------------------------
 -- Readable
 
-testReadable :: (Int, Int) -> (Int, Int)
+testReadable :: Test
 testReadable =
   ( testEqual "read int" (match (read "42") | (Ok _cv) = _cv | (Err _) = -1) 42
   . testEqual "read int neg" (match (read "-7") | (Ok _cv) = _cv | (Err _) = -1) -7
@@ -757,7 +709,7 @@ testReadable =
 -------------------------------------------------------------------------------
 -- Deque (Foldable, Functor, Stack, Queue, Semigroup)
 
-testDeque :: (Int, Int) -> (Int, Int)
+testDeque :: Test
 testDeque =
   ( -- Construction from a list literal via Packable (List a) (Deque a)
     testEqual "deq from list literal" (fold (+) 0 ([1,2,3] :: Deque a)) 6
