@@ -2,6 +2,7 @@ module root (*)
 
 import internal
 
+infixl 1 (|>)
 infixr 2 ||
 infixr 3 &&
 infixl 4 (<=)
@@ -169,6 +170,20 @@ instance TotalInto a a where
 
 id :: a -> a
 id x = x
+
+-- Apply a function to a value, written left to right. Binds looser than
+-- everything else, so a chain reads as a pipeline:
+--
+--   asCol "team" names
+--     |> addCol "played" plays
+--     |> addCol "won" wins
+--     |> sortRows [("won", False)]
+--
+-- The alternative is nesting, which reads inside out and puts the first
+-- step last. Where a type carries an order -- a table's columns -- the
+-- pipeline also makes the source order and the schema order agree.
+(|>) :: a -> (a -> b) -> b
+(|>) x f = f x
 
 seq :: a -> b -> b
 seq x y = y
