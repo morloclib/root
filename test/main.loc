@@ -207,13 +207,13 @@ testIntegral =
   . testEqual "6 % 3" (6 % 3) 0
   . testEqual "0 % 1" (0 % 1) 0
   . testEqual "5 % 3" (5 % 3) 2
-  -- Division floors and the remainder takes the divisor's sign, in every
-  -- language
-  . testEqual "-7 // 2" (neg 7 // 2) (neg 4)
-  . testEqual "7 // -2" (7 // neg 2) (neg 4)
+  -- Division truncates toward zero and the remainder takes the dividend's
+  -- sign, as in C, in every language
+  . testEqual "-7 // 2" (neg 7 // 2) (neg 3)
+  . testEqual "7 // -2" (7 // neg 2) (neg 3)
   . testEqual "-7 // -2" (neg 7 // neg 2) 3
-  . testEqual "-7 % 2" (neg 7 % 2) 1
-  . testEqual "7 % -2" (7 % neg 2) (neg 1)
+  . testEqual "-7 % 2" (neg 7 % 2) (neg 1)
+  . testEqual "7 % -2" (7 % neg 2) 1
   . testEqual "-7 % -2" (neg 7 % neg 2) (neg 1)
   -- Associativity
   . testEqual "add assoc" ((1 + 2) + 3) (1 + (2 + 3))
