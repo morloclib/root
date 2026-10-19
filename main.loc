@@ -3,13 +3,9 @@ module root (*)
 import internal
 
 infixl 1 (|>)
-infixr 2 ||
-infixr 3 &&
-infixl 4 (<=)
 infixl 4 (<)
 infixl 4 (>)
 infixl 4 (>=)
-infixl 4 (==)
 infixl 4 (!=)
 infixr 6 (<>)
 infixr 5 (++)
@@ -21,9 +17,6 @@ infixl 7 (//)
 infixl 7 (%)
 infixr 8 (**)
 
-class Ord a where
-  (<=) :: a -> a -> Bool
-
 (<) :: Ord a => a -> a -> Bool
 (<) x y = x <= y && not (y <= x)
 
@@ -32,9 +25,6 @@ class Ord a where
 
 (>=) :: Ord a => a -> a -> Bool
 (>=) x y = y <= x
-
-class Eq a where
-  (==) :: a -> a -> Bool
 
 (!=) :: Eq a => a -> a -> Bool
 (!=) x y = not (x == y)
@@ -85,9 +75,6 @@ class Foldable f where
 
 class Functor f where
   map :: (a -> b) -> f a -> f b
-
-class Show a where
-  show :: a -> Str
 
 class Readable a where
   -- Parsing touches nothing, so with failure carried in the result this is
@@ -205,10 +192,6 @@ on f g x y = f (g x) (g y)
 --------------
 
 not :: Bool -> Bool
-
-(&&) :: Bool -> Bool -> Bool
-
-(||) :: Bool -> Bool -> Bool
 
 xor :: Bool -> Bool -> Bool
 xor x y = (nand x y) && (nand (not x) (not y))
