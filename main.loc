@@ -106,7 +106,7 @@ instance Stack List
 instance Queue List
 
 --' A list with O(n) random access and O(1) start/end access
---' metavar: LIST
+--' @metavar LIST
 newtype Deque a = List a
 instance Semigroup (Deque a)
 instance Monoid (Deque a)
