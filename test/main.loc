@@ -626,6 +626,19 @@ testListFunctions =
   . testEqual "concatMap" (concatMap (\x -> [x, x * 2]) [1,2,3]) [1,2,2,4,3,6]
   . testEqual "concatMap empty" (concatMap (\x -> [x]) ([] :: [Int])) ([] :: [Int])
   . testEqual "concatMap filter" (concatMap (\x -> filter (>= 3) [x]) [1,2,3,4]) [3,4]
+  . testEqual "concat str" (concat ["ab", "", "c"]) "abc"
+  . testEqual "concat str empty" (concat ([] :: [Str])) ""
+  . testEqual "concat nested" (concat [[[1],[2,3]], [], [[4]]]) [[1],[2,3],[4]]
+  . testEqual "concat nested empty" (concat ([] :: [[[Int]]])) ([] :: [[Int]])
+  . testEqual "concat str lists" (concat [["a"], ["b", "c"]]) ["a", "b", "c"]
+  . testEqual "concat str lists empty" (concat ([] :: [[Str]])) ([] :: [Str])
+  . testEqual "concat tuples" (concat [[(1, "a")], [(2, "b")]]) [(1, "a"), (2, "b")]
+  . testEqual "concat tuples empty" (concat ([] :: [[(Int, Str)]])) ([] :: [(Int, Str)])
+  . testEqual "concat bytes" (concat [[1, 2], [3]] :: [U8]) [1, 2, 3]
+  . testEqual "concat i64 empty first" (concat [[], [5000000000], []] :: [I64]) [5000000000]
+  . testEqual "concatMap str" (concatMap (\x -> x <> x) ["a", "b"]) "aabb"
+  . testEqual "mconcat equals fold" (mconcat [[1],[2,3]]) (fold (<>) mempty [[1],[2,3]])
+  . testEqual "intercalate str" (intercalate ", " ["a", "b"]) "a, b"
   )
 
 -------------------------------------------------------------------------------
@@ -733,4 +746,7 @@ testDeque =
   . testEqual "deq unsnoc init" (fold (+) 0 (.0 (unsnoc ([10,20,30] :: Deque a)))) 30
   -- Semigroup
   . testEqual "deq <>" (fold (+) 0 (([1,2] :: Deque a) <> ([3,4] :: Deque a))) 10
+  -- Monoid
+  . testEqual "deq concat" (fold (+) 0 (concat [([1,2] :: Deque a), ([3] :: Deque a)])) 6
+  . testEqual "deq concat empty" (length (concat ([] :: [Deque Int]))) 0
   )

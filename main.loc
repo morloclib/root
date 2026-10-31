@@ -32,8 +32,11 @@ infixr 8 (**)
 class Semigroup a where
   (<>) :: a -> a -> a
 
+-- `mconcat xs` equals `fold (<>) mempty xs`; an instance whose `<>` copies its
+-- operands implements it in one pass.
 class Semigroup a => Monoid a where
   mempty :: a
+  mconcat :: [a] -> a
 
 -- Semigroup for Nat-parameterized containers
 class SemigroupDim f where
@@ -246,11 +249,13 @@ all f = fold (\b a -> b && f a) True
 elem :: (Foldable f, Eq a) => a -> f a -> Bool
 elem x = any ((==) x)
 
-concat :: (Foldable f, Monoid (f a)) => f (f a) -> f a
-concat = fold (<>) mempty
+--' Combine a list of values, such as lists or strings, in order
+concat :: Monoid a => [a] -> a
+concat = mconcat
 
-concatMap :: (Foldable f, Functor f, Monoid (f b)) => (a -> f b) -> f a -> f b
-concatMap f xs = concat (map f xs)
+--' Map each element to a value and combine the results in order
+concatMap :: Monoid b => (a -> b) -> [a] -> b
+concatMap f xs = mconcat (map f xs)
 
 sum :: (Foldable f, Integral a) => f a -> a
 sum = fold (+) zero
@@ -279,8 +284,9 @@ partition p xs = (filter p xs, filter (not . p) xs)
 
 unique :: Eq a => [a] -> [a]
 
-intercalate :: [a] -> [[a]] -> [a]
-intercalate sep xss = concat (intersperse sep xss)
+--' Join values with a separator between each pair
+intercalate :: Monoid a => a -> [a] -> a
+intercalate sep xss = mconcat (intersperse sep xss)
 
 -- List-specific operations
 -----------------------------
