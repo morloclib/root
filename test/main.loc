@@ -1,15 +1,22 @@
-module root.test (test)
+module root.test (rootSuite)
 
 import root
 import unittest
 
-test = suite runTests
+--' Run the root suite
+rootSuite ::
+  --' Whether to check the 64-bit values R cannot hold
+  --'
+  --' The I64 minimum and U64 values of 2^63 or more.
+  Bool ->
+  Bool
+rootSuite full64 = suite (runTests full64)
 
 -------------------------------------------------------------------------------
 -- Test suite
 
-runTests :: Test
-runTests =
+runTests :: Bool -> Test
+runTests full64 =
   ( group "Deque" testDeque
   . group "Readable" testReadable
   . group "New Functions" testNewFunctions
@@ -28,6 +35,7 @@ runTests =
   . group "RealLike" testRealLike
   . group "Numeric" testNumeric
   . group "Integral" testIntegral
+  . group "Bounded" (testBounded full64)
   . group "Comparisons" testComparisons
   . group "Bools" testBools
   . group "Tuples" testTuples
@@ -226,6 +234,74 @@ testIntegral =
   -- Identity
   . testEqual "add identity" (42 + 0) 42
   . testEqual "mul identity" (42 * 1) 42
+  )
+
+-------------------------------------------------------------------------------
+-- Bounded and saturating arithmetic
+
+testBounded :: Bool -> Test
+testBounded full64 = testBounded64 full64 . testBoundedPortable
+
+testBounded64 :: Bool -> Test
+testBounded64 full64
+  ? full64 =
+    ( testEqual "I64" ((vmin :: I64), (vmax :: I64)) (-9223372036854775808, 9223372036854775807)
+    . testEqual "U64" ((vmin :: U64), (vmax :: U64)) (0, 18446744073709551615)
+    . testEqual "addSat U64" (addSat (vmax :: U64) 1) 0xFFFFFFFFFFFFFFFF
+    . testEqual "subSat I64" (subSat (vmin :: I64) 1) (-0x7FFFFFFFFFFFFFFF - 1)
+    . testEqual "mulSat I64 under" (mulSat (-3037000500 :: I64) 3037000500) (-0x7FFFFFFFFFFFFFFF - 1)
+    . testEqual "mulSat U64" (mulSat (0x100000000 :: U64) 0x100000000) 0xFFFFFFFFFFFFFFFF
+    . testEqual "negSat I64 min" (negSat (vmin :: I64)) 0x7FFFFFFFFFFFFFFF
+    )
+  : id
+
+testBoundedPortable :: Test
+testBoundedPortable =
+  ( testEqual "Bool" ((vmin :: Bool), (vmax :: Bool)) (False, True)
+  . testEqual "I8" ((vmin :: I8), (vmax :: I8)) (-128, 127)
+  . testEqual "I16" ((vmin :: I16), (vmax :: I16)) (-32768, 32767)
+  . testEqual "I32" ((vmin :: I32), (vmax :: I32)) (-2147483648, 2147483647)
+  . testEqual "U8" ((vmin :: U8), (vmax :: U8)) (0, 255)
+  . testEqual "U16" ((vmin :: U16), (vmax :: U16)) (0, 65535)
+  . testEqual "U32" ((vmin :: U32), (vmax :: U32)) (0, 4294967295)
+  . testEqual "addSat" (addSat (100 :: I8) 20) 120
+  . testEqual "addSat to the top" (addSat (100 :: I8) 27) 127
+  . testEqual "addSat over the top" (addSat (100 :: I8) 28) 127
+  . testEqual "addSat at the top" (addSat (vmax :: I8) vmax) 127
+  . testEqual "addSat to the bottom" (addSat (-100 :: I8) (-28)) (-128)
+  . testEqual "addSat under the bottom" (addSat (-100 :: I8) (-29)) (-128)
+  . testEqual "addSat at the bottom" (addSat (vmin :: I8) vmin) (-128)
+  . testEqual "addSat opposite signs" (addSat (vmin :: I8) vmax) (-1)
+  . testEqual "addSat U8" (addSat (200 :: U8) 100) 255
+  . testEqual "addSat I64" (addSat (vmax :: I64) 1) 0x7FFFFFFFFFFFFFFF
+  . testEqual "subSat" (subSat (100 :: I8) 20) 80
+  . testEqual "subSat over the top" (subSat (100 :: I8) (-28)) 127
+  . testEqual "subSat under the bottom" (subSat (-100 :: I8) 29) (-128)
+  . testEqual "subSat to the bottom" (subSat (-1 :: I8) 127) (-128)
+  . testEqual "subSat max from min" (subSat (vmin :: I8) vmax) (-128)
+  . testEqual "subSat min from max" (subSat (vmax :: I8) vmin) 127
+  . testEqual "subSat U8 below 0" (subSat (3 :: U8) 5) 0
+  . testEqual "subSat U8" (subSat (5 :: U8) 3) 2
+  . testEqual "subSat U64" (subSat (0 :: U64) 1) 0
+  . testEqual "mulSat" (mulSat (-12 :: I8) 10) (-120)
+  . testEqual "mulSat to the top" (mulSat (-127 :: I8) (-1)) 127
+  . testEqual "mulSat to the bottom" (mulSat (-64 :: I8) 2) (-128)
+  . testEqual "mulSat under the bottom, left" (mulSat (-65 :: I8) 2) (-128)
+  . testEqual "mulSat under the bottom, right" (mulSat (2 :: I8) (-65)) (-128)
+  . testEqual "mulSat over the top" (mulSat (64 :: I8) 2) 127
+  . testEqual "mulSat both negative" (mulSat (-64 :: I8) (-2)) 127
+  . testEqual "mulSat min by -1" (mulSat (vmin :: I8) (-1)) 127
+  . testEqual "mulSat min by 1" (mulSat (vmin :: I8) 1) (-128)
+  . testEqual "mulSat by 0" (mulSat (vmin :: I8) 0) 0
+  . testEqual "mulSat U8" (mulSat (16 :: U8) 16) 255
+  . testEqual "mulSat U8 exact" (mulSat (15 :: U8) 17) 255
+  . testEqual "mulSat I64" (mulSat (3037000500 :: I64) 3037000500) 0x7FFFFFFFFFFFFFFF
+  . testEqual "mulSat I64 exact" (mulSat (3037000499 :: I64) 3037000499) 9223372030926249001
+  . testEqual "negSat" (negSat (5 :: I8)) (-5)
+  . testEqual "negSat max" (negSat (vmax :: I8)) (-127)
+  . testEqual "negSat min" (negSat (vmin :: I8)) 127
+  . testEqual "negSat U8" (negSat (5 :: U8)) 0
+  . testEqual "negSat U8 0" (negSat (0 :: U8)) 0
   )
 
 -------------------------------------------------------------------------------

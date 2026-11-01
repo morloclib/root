@@ -71,6 +71,48 @@ class Integral a => Numeric a where
   (/) :: a -> a -> a
   ln :: a -> a
 
+--' Types with a least and a greatest value
+class Bounded a where
+  vmin :: a
+  vmax :: a
+
+instance Bounded Bool where
+  vmin = False
+  vmax = True
+
+instance Bounded I8 where
+  vmin = -0x7F - 1
+  vmax = 0x7F
+
+instance Bounded I16 where
+  vmin = -0x7FFF - 1
+  vmax = 0x7FFF
+
+instance Bounded I32 where
+  vmin = -0x7FFFFFFF - 1
+  vmax = 0x7FFFFFFF
+
+-- note that the (-0x7FFFFFFFFFFFFFFF - 1) idiom finds the min integer
+instance Bounded I64 where
+  vmin = -0x7FFFFFFFFFFFFFFF - 1
+  vmax = 0x7FFFFFFFFFFFFFFF
+
+instance Bounded U8 where
+  vmin = 0
+  vmax = 0xFF
+
+instance Bounded U16 where
+  vmin = 0
+  vmax = 0xFFFF
+
+instance Bounded U32 where
+  vmin = 0
+  vmax = 0xFFFFFFFF
+
+instance Bounded U64 where
+  vmin = 0
+  vmax = 0xFFFFFFFFFFFFFFFF
+
 class Foldable f where
   fold :: (b -> a -> b) -> b -> f a -> b
   fold1 :: (b -> a -> b) -> f a -> b
@@ -233,6 +275,39 @@ min x y ? x < y = x
 max :: Ord a => a -> a -> a
 max x y ? x < y = y
         : x
+
+-- Saturating arithmetic
+--------------------------
+
+--' Sum, held at the type's bounds instead of overflowing
+addSat :: (Bounded a, Integral a, Ord a) => a -> a -> a
+addSat a b
+  ? b > zero && a > vmax - b = vmax
+  ? b < zero && a < vmin - b = vmin
+  : a + b
+
+--' Difference, held at the type's bounds instead of overflowing
+subSat :: (Bounded a, Integral a, Ord a) => a -> a -> a
+subSat a b
+  ? b < zero && a > vmax + b = vmax
+  ? b > zero && a < vmin + b = vmin
+  : a - b
+
+--' Product, held at the type's bounds instead of overflowing
+mulSat :: (Bounded a, Integral a, Ord a) => a -> a -> a
+mulSat a b
+  ? a > zero && b > zero && a > vmax // b = vmax
+  ? a < zero && b < zero && a < vmax // b = vmax
+  ? a > zero && b < zero && b < vmin // a = vmin
+  ? a < zero && b > zero && a < vmin // b = vmin
+  : a * b
+
+--' Negation, held at the type's bounds instead of overflowing
+--'
+--' The negation of the least signed value is the greatest; that of an
+--' unsigned value other than 0 is 0.
+negSat :: (Bounded a, Integral a, Ord a) => a -> a
+negSat a = subSat zero a
 
 -- Foldable-derived operations
 -------------------------------
