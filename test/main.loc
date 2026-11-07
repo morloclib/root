@@ -173,6 +173,22 @@ testComparisons =
   . testEqual "eq list" ([1,2,3] == [1,2,3]) True
   . testEqual "ne list" ([1,2,3] != [1,2,4]) True
   . testEqual "eq list empty" (([] :: [Int]) == ([] :: [Int])) True
+  . testEqual "ne list eq" ([1,2,3] != [1,2,3]) False
+  . testEqual "ne nested list" ([[1],[2,3]] != [[1],[2,3]]) False
+  . testEqual "lt list" ([1,2] < [1,3]) True
+  . testEqual "ge list" ([1,3] >= [1,2,9]) True
+  . testEqual "gt str" ("b" > "abc") True
+  . testEqual "ne real" (1.5 != 1.5) False
+  -- Optional comparisons
+  . testEqual "eq optional" ((Null :: ?Int) == (Null :: ?Int)) True
+  . testEqual "ne optional" ((Null :: ?Int) != (Null :: ?Int)) False
+  -- Comparisons on bound values
+  . testEqual "filter ne" (filter (\x -> x != 2) [1,2,3]) [1,3]
+  . testEqual "filter lt" (filter (\x -> x < 2) [1,2,3]) [1]
+  . testEqual "filter gt" (filter (\x -> x > 2) [1,2,3]) [3]
+  . testEqual "filter ge" (filter (\x -> x >= 2) [1,2,3]) [2,3]
+  . testEqual "filter le" (filter (\x -> x <= 2) [1,2,3]) [1,2]
+  . testEqual "filter chain" (filter (\x -> x != 1 && x != 3) [1,2,3,4]) [2,4]
   -- Negative numbers
   . testEqual "lt neg" ((0 - 5) < 0) True
   . testEqual "le neg" ((0 - 5) <= (0 - 5)) True

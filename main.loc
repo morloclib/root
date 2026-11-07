@@ -3,10 +3,6 @@ module root (*)
 import internal
 
 infixl 1 (|>)
-infixl 4 (<)
-infixl 4 (>)
-infixl 4 (>=)
-infixl 4 (!=)
 infixr 6 (<>)
 infixr 5 (++)
 infixl 6 (+)
@@ -16,18 +12,6 @@ infixl 7 (/)
 infixl 7 (//)
 infixl 7 (%)
 infixr 8 (**)
-
-(<) :: Ord a => a -> a -> Bool
-(<) x y = x <= y && not (y <= x)
-
-(>) :: Ord a => a -> a -> Bool
-(>) x y = y <= x && not (x <= y)
-
-(>=) :: Ord a => a -> a -> Bool
-(>=) x y = y <= x
-
-(!=) :: Eq a => a -> a -> Bool
-(!=) x y = not (x == y)
 
 class Semigroup a where
   (<>) :: a -> a -> a
@@ -143,8 +127,6 @@ instance Monoid (List a)
 instance Functor List
 instance Foldable List
 instance Sizeable (List a)
-instance Eq (List a)
-instance Ord (List a)
 instance Indexable List
 instance Sliceable List
 instance Stack List
@@ -157,8 +139,6 @@ instance Semigroup (Deque a)
 instance Monoid (Deque a)
 instance Functor Deque
 instance Foldable Deque
-instance Eq (Deque a)
-instance Ord (Deque a)
 instance Stack Deque
 instance Queue Deque
 
@@ -237,6 +217,17 @@ on f g x y = f (g x) (g y)
 --------------
 
 not :: Bool -> Bool
+
+--' Optionals
+--------------
+
+--' The value inside an optional
+--'
+--' The optional must not be Null; test it with `isNull` first.
+require :: ?a -> a
+
+--' Whether an optional is Null
+isNull :: ?a -> Bool
 
 xor :: Bool -> Bool -> Bool
 xor x y = (nand x y) && (nand (not x) (not y))
@@ -384,3 +375,187 @@ range :: Int -> Int -> [Int]
 --   rangeStep 0 10 2 == [0,2,4,6,8]
 --   rangeStep 0 6 3  == [0,3]
 rangeStep :: Int -> Int -> Int -> [Int]
+
+-------------------------------------------------------------------------------
+-- Comparison of compound values, through the instances of their parts
+
+--' -1, 0 or 1 as the first value is below, equal to or above the second
+compare :: Ord a => a -> a -> Int
+compare x y
+  ? x < y = 0 - 1
+  : ? y < x = 1
+  : 0
+
+--' The first comparison unless it is equal, then the second
+thenCompare :: Int -> Int -> Int
+thenCompare c d
+  ? c == 0 = d
+  : c
+
+--' Compare two lists element by element, then by length
+compareList :: Ord a => [a] -> [a] -> Int
+compareList xs ys =
+  thenCompare
+    (fold (\c p -> thenCompare c (compare (.0 p) (.1 p))) 0 (zip xs ys))
+    (compare (length xs) (length ys))
+
+--' Whether two lists hold equal elements in the same order
+equalList :: Eq a => [a] -> [a] -> Bool
+equalList xs ys = length xs == length ys && all (\p -> .0 p == .1 p) (zip xs ys)
+
+instance Eq a => Eq (List a) where
+  (==) xs ys = equalList xs ys
+  (!=) xs ys = not (equalList xs ys)
+
+instance Ord a => Ord (List a) where
+  (<) xs ys = compareList xs ys < 0
+  (<=) xs ys = compareList xs ys <= 0
+  (>) xs ys = compareList xs ys > 0
+  (>=) xs ys = compareList xs ys >= 0
+
+--' The elements of a deque, first to last
+dequeList :: Deque a -> [a]
+dequeList x = unpack x
+
+instance Eq a => Eq (Deque a) where
+  (==) x y = equalList (dequeList x) (dequeList y)
+  (!=) x y = not (equalList (dequeList x) (dequeList y))
+
+instance Ord a => Ord (Deque a) where
+  (<) x y = compareList (dequeList x) (dequeList y) < 0
+  (<=) x y = compareList (dequeList x) (dequeList y) <= 0
+  (>) x y = compareList (dequeList x) (dequeList y) > 0
+  (>=) x y = compareList (dequeList x) (dequeList y) >= 0
+
+--' Whether two optionals are both Null or hold equal values
+equalOptional :: Eq a => ?a -> ?a -> Bool
+equalOptional x y
+  ? isNull x = isNull y
+  : ? isNull y = False
+  : require x == require y
+
+--' Compare two optionals, Null first
+compareOptional :: Ord a => ?a -> ?a -> Int
+compareOptional x y
+  ? isNull x && isNull y = 0
+  : ? isNull x = 0 - 1
+  : ? isNull y = 1
+  : compare (require x) (require y)
+
+instance Eq a => Eq ?a where
+  (==) x y = equalOptional x y
+  (!=) x y = not (equalOptional x y)
+
+instance Ord a => Ord ?a where
+  (<) x y = compareOptional x y < 0
+  (<=) x y = compareOptional x y <= 0
+  (>) x y = compareOptional x y > 0
+  (>=) x y = compareOptional x y >= 0
+
+instance Eq Unit where
+  (==) x y = True
+  (!=) x y = False
+
+instance Ord Unit where
+  (<) x y = False
+  (<=) x y = True
+  (>) x y = False
+  (>=) x y = True
+
+--' Compare two 2-tuples field by field
+compareTuple2 :: (Ord a, Ord b) => (a, b) -> (a, b) -> Int
+compareTuple2 x y = thenCompare (compare (.0 x) (.0 y)) (compare (.1 x) (.1 y))
+
+instance (Eq a, Eq b) => Eq (a, b) where
+  (==) x y = .0 x == .0 y && .1 x == .1 y
+  (!=) x y = not (.0 x == .0 y && .1 x == .1 y)
+
+instance (Ord a, Ord b) => Ord (a, b) where
+  (<) x y = compareTuple2 x y < 0
+  (<=) x y = compareTuple2 x y <= 0
+  (>) x y = compareTuple2 x y > 0
+  (>=) x y = compareTuple2 x y >= 0
+
+--' Compare two 3-tuples field by field
+compareTuple3 :: (Ord a, Ord b, Ord c) => (a, b, c) -> (a, b, c) -> Int
+compareTuple3 x y = thenCompare (compare (.0 x) (.0 y)) (thenCompare (compare (.1 x) (.1 y)) (compare (.2 x) (.2 y)))
+
+instance (Eq a, Eq b, Eq c) => Eq (a, b, c) where
+  (==) x y = .0 x == .0 y && .1 x == .1 y && .2 x == .2 y
+  (!=) x y = not (.0 x == .0 y && .1 x == .1 y && .2 x == .2 y)
+
+instance (Ord a, Ord b, Ord c) => Ord (a, b, c) where
+  (<) x y = compareTuple3 x y < 0
+  (<=) x y = compareTuple3 x y <= 0
+  (>) x y = compareTuple3 x y > 0
+  (>=) x y = compareTuple3 x y >= 0
+
+--' Compare two 4-tuples field by field
+compareTuple4 :: (Ord a, Ord b, Ord c, Ord d) => (a, b, c, d) -> (a, b, c, d) -> Int
+compareTuple4 x y = thenCompare (compare (.0 x) (.0 y)) (thenCompare (compare (.1 x) (.1 y)) (thenCompare (compare (.2 x) (.2 y)) (compare (.3 x) (.3 y))))
+
+instance (Eq a, Eq b, Eq c, Eq d) => Eq (a, b, c, d) where
+  (==) x y = .0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y
+  (!=) x y = not (.0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y)
+
+instance (Ord a, Ord b, Ord c, Ord d) => Ord (a, b, c, d) where
+  (<) x y = compareTuple4 x y < 0
+  (<=) x y = compareTuple4 x y <= 0
+  (>) x y = compareTuple4 x y > 0
+  (>=) x y = compareTuple4 x y >= 0
+
+--' Compare two 5-tuples field by field
+compareTuple5 :: (Ord a, Ord b, Ord c, Ord d, Ord e) => (a, b, c, d, e) -> (a, b, c, d, e) -> Int
+compareTuple5 x y = thenCompare (compare (.0 x) (.0 y)) (thenCompare (compare (.1 x) (.1 y)) (thenCompare (compare (.2 x) (.2 y)) (thenCompare (compare (.3 x) (.3 y)) (compare (.4 x) (.4 y)))))
+
+instance (Eq a, Eq b, Eq c, Eq d, Eq e) => Eq (a, b, c, d, e) where
+  (==) x y = .0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y
+  (!=) x y = not (.0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y)
+
+instance (Ord a, Ord b, Ord c, Ord d, Ord e) => Ord (a, b, c, d, e) where
+  (<) x y = compareTuple5 x y < 0
+  (<=) x y = compareTuple5 x y <= 0
+  (>) x y = compareTuple5 x y > 0
+  (>=) x y = compareTuple5 x y >= 0
+
+--' Compare two 6-tuples field by field
+compareTuple6 :: (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f) => (a, b, c, d, e, f) -> (a, b, c, d, e, f) -> Int
+compareTuple6 x y = thenCompare (compare (.0 x) (.0 y)) (thenCompare (compare (.1 x) (.1 y)) (thenCompare (compare (.2 x) (.2 y)) (thenCompare (compare (.3 x) (.3 y)) (thenCompare (compare (.4 x) (.4 y)) (compare (.5 x) (.5 y))))))
+
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f) => Eq (a, b, c, d, e, f) where
+  (==) x y = .0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y && .5 x == .5 y
+  (!=) x y = not (.0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y && .5 x == .5 y)
+
+instance (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f) => Ord (a, b, c, d, e, f) where
+  (<) x y = compareTuple6 x y < 0
+  (<=) x y = compareTuple6 x y <= 0
+  (>) x y = compareTuple6 x y > 0
+  (>=) x y = compareTuple6 x y >= 0
+
+--' Compare two 7-tuples field by field
+compareTuple7 :: (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f, Ord g) => (a, b, c, d, e, f, g) -> (a, b, c, d, e, f, g) -> Int
+compareTuple7 x y = thenCompare (compare (.0 x) (.0 y)) (thenCompare (compare (.1 x) (.1 y)) (thenCompare (compare (.2 x) (.2 y)) (thenCompare (compare (.3 x) (.3 y)) (thenCompare (compare (.4 x) (.4 y)) (thenCompare (compare (.5 x) (.5 y)) (compare (.6 x) (.6 y)))))))
+
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g) => Eq (a, b, c, d, e, f, g) where
+  (==) x y = .0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y && .5 x == .5 y && .6 x == .6 y
+  (!=) x y = not (.0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y && .5 x == .5 y && .6 x == .6 y)
+
+instance (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f, Ord g) => Ord (a, b, c, d, e, f, g) where
+  (<) x y = compareTuple7 x y < 0
+  (<=) x y = compareTuple7 x y <= 0
+  (>) x y = compareTuple7 x y > 0
+  (>=) x y = compareTuple7 x y >= 0
+
+--' Compare two 8-tuples field by field
+compareTuple8 :: (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f, Ord g, Ord h) => (a, b, c, d, e, f, g, h) -> (a, b, c, d, e, f, g, h) -> Int
+compareTuple8 x y = thenCompare (compare (.0 x) (.0 y)) (thenCompare (compare (.1 x) (.1 y)) (thenCompare (compare (.2 x) (.2 y)) (thenCompare (compare (.3 x) (.3 y)) (thenCompare (compare (.4 x) (.4 y)) (thenCompare (compare (.5 x) (.5 y)) (thenCompare (compare (.6 x) (.6 y)) (compare (.7 x) (.7 y))))))))
+
+instance (Eq a, Eq b, Eq c, Eq d, Eq e, Eq f, Eq g, Eq h) => Eq (a, b, c, d, e, f, g, h) where
+  (==) x y = .0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y && .5 x == .5 y && .6 x == .6 y && .7 x == .7 y
+  (!=) x y = not (.0 x == .0 y && .1 x == .1 y && .2 x == .2 y && .3 x == .3 y && .4 x == .4 y && .5 x == .5 y && .6 x == .6 y && .7 x == .7 y)
+
+instance (Ord a, Ord b, Ord c, Ord d, Ord e, Ord f, Ord g, Ord h) => Ord (a, b, c, d, e, f, g, h) where
+  (<) x y = compareTuple8 x y < 0
+  (<=) x y = compareTuple8 x y <= 0
+  (>) x y = compareTuple8 x y > 0
+  (>=) x y = compareTuple8 x y >= 0
