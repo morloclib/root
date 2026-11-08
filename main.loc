@@ -45,6 +45,16 @@ class Integral a where
 
 instance Integral Real
 instance Integral Int
+instance Integral I8
+instance Integral I16
+instance Integral I32
+instance Integral I64
+instance Integral U8
+instance Integral U16
+instance Integral U32
+instance Integral U64
+instance Integral F32
+instance Integral F64
 instance Numeric Real
 
 instance Semigroup Str
@@ -65,20 +75,19 @@ instance Bounded Bool where
   vmax = True
 
 instance Bounded I8 where
-  vmin = -0x7F - 1
+  vmin = -0x80
   vmax = 0x7F
 
 instance Bounded I16 where
-  vmin = -0x7FFF - 1
+  vmin = -0x8000
   vmax = 0x7FFF
 
 instance Bounded I32 where
-  vmin = -0x7FFFFFFF - 1
+  vmin = -0x80000000
   vmax = 0x7FFFFFFF
 
--- note that the (-0x7FFFFFFFFFFFFFFF - 1) idiom finds the min integer
 instance Bounded I64 where
-  vmin = -0x7FFFFFFFFFFFFFFF - 1
+  vmin = -0x8000000000000000
   vmax = 0x7FFFFFFFFFFFFFFF
 
 instance Bounded U8 where
