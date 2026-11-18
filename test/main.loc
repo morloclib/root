@@ -502,11 +502,14 @@ testFold =
   . testEqual "fold product empty" (fold (*) 1 ([] :: [Int])) 1
   . testEqual "fold count" (fold (\b a -> 1 + b) 0 [1,2,3]) 3
   . testEqual "fold concat" (fold (<>) "" ["a","b","c"]) "abc"
-  -- length (derived from fold)
+  -- length
   . testEqual "length [1,2,3]" (length [1,2,3]) 3
   . testEqual "length []" (length ([] :: [Int])) 0
   . testEqual "length single" (length [42]) 1
   . testEqual "length str" (length ["a","b"]) 2
+  . testEqual "length nested" (length [[1,2],[3],[]]) 3
+  . testEqual "length tuples" (length [(1,"a"),(2,"b")]) 2
+  . testEqual "length deque empty" (length ([] :: Deque Int)) 0
   -- fold1 (uses first element as accumulator)
   . testEqual "fold1 sum" (fold1 (+) [1,2,3]) 6
   . testEqual "fold1 single" (fold1 (+) [42]) 42

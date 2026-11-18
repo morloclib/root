@@ -110,6 +110,7 @@ class Foldable f where
   fold :: (b -> a -> b) -> b -> f a -> b
   fold1 :: (b -> a -> b) -> f a -> b
   safeFold1 :: (b -> a -> b) -> f a -> ?b
+  length :: f a -> Int
 
 class Functor f where
   map :: (a -> b) -> f a -> f b
@@ -311,9 +312,6 @@ negSat a = subSat zero a
 
 -- Foldable-derived operations
 -------------------------------
-
-length :: Foldable f => f a -> Int
-length = fold (\n x -> n + 1) 0
 
 any :: Foldable f => (a -> Bool) -> f a -> Bool
 any f = fold (\b a -> b || f a) False
