@@ -383,6 +383,27 @@ range :: Int -> Int -> [Int]
 --   rangeStep 0 6 3  == [0,3]
 rangeStep :: Int -> Int -> Int -> [Int]
 
+
+-------------------------------------------------------------------------------
+-- Effectful control functions
+
+--' Run an action for each element of a list, in order
+mapE_ :: (a -> <e> ()) -> [a] -> <e> ()
+mapE_ f xs = do
+  ? length xs == 0 = do ()
+  : do
+    f (.[0] xs)
+    mapE_ f (.[1:] xs)
+
+--' Run an action for each element of a list, keeping results
+mapE :: (a -> <e> b) -> [a] -> <e> [b]
+mapE f xs = do
+  ? length xs == 0 = do []
+  : do
+    y <- f (.[0] xs)
+    ys <- mapE f (.[1:] xs)
+    [y] <> ys
+
 -------------------------------------------------------------------------------
 -- Comparison of compound values, through the instances of their parts
 
